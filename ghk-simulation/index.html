@@ -1,0 +1,2765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GHK Simulator — Goldman-Hodgkin-Katz Interactive</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1a1a2e;--bg2:#16213e;--bg3:#0f3460;
+  --accent:#4fc3f7;--accent2:#81d4fa;
+  --text:#e8e8f0;--text2:#9090a8;
+  --err:#ef5350;--ok:#66bb6a;--warn:#ffa726;
+  --k:#4caf50;--na:#ff9800;--cl:#ab47bc;--ca:#ef5350;
+  --border:rgba(79,195,247,0.18);
+  --card:rgba(255,255,255,0.035);
+  --inp:rgba(255,255,255,0.06);
+  --rad:6px;
+}
+body{background:var(--bg);color:var(--text);font:14px/1.5 'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* TOP BAR */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 20px;
+  display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:200}
+.topbar-title{color:var(--accent);font-size:17px;font-weight:700;letter-spacing:.3px;flex:1}
+.topbar-title span{opacity:.6;font-weight:400;font-size:13px;margin-left:6px}
+.temp-wrap{display:flex;align-items:center;gap:6px;background:var(--inp);
+  border:1px solid var(--border);border-radius:var(--rad);padding:4px 12px}
+.temp-wrap label{color:var(--text2);font-size:12px}
+.temp-wrap input{background:none;border:none;color:var(--accent);font-size:14px;
+  font-weight:600;width:52px;text-align:right;outline:none}
+.temp-wrap .nf{color:var(--text2);font-size:11px}
+
+/* TAB BAR */
+.tabbar{background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;overflow-x:auto;scrollbar-width:thin}
+.tabbar::-webkit-scrollbar{height:3px}
+.tabbar::-webkit-scrollbar-thumb{background:var(--border)}
+.tab-btn{padding:10px 15px;background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--text2);cursor:pointer;font-size:12.5px;white-space:nowrap;
+  transition:all .2s;font-family:inherit}
+.tab-btn:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* PANELS */
+.tab-panel{display:none;padding:18px 20px;max-width:1380px;margin:0 auto}
+.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px}
+.card-title{color:var(--accent);font-size:11.5px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.6px;margin-bottom:12px}
+
+/* LAYOUTS */
+.layout-2col{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* INPUT GROUP */
+.ig{display:flex;flex-direction:column;gap:3px;position:relative}
+.ig label{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;user-select:none}
+.ig .unit{color:var(--accent2);font-size:10px}
+.ig .tip{width:14px;height:14px;border-radius:50%;background:rgba(79,195,247,.15);
+  color:var(--accent);font-size:9px;display:inline-flex;align-items:center;
+  justify-content:center;cursor:help;flex-shrink:0;position:relative}
+.ig .tip::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;
+  transform:translateX(-50%);background:#222;color:#ddd;padding:5px 8px;border-radius:4px;
+  font-size:10.5px;white-space:pre-line;z-index:500;pointer-events:none;min-width:160px;
+  max-width:220px;display:none;line-height:1.4;text-align:left;border:1px solid var(--border)}
+.ig .tip:hover::after{display:block}
+.ig input,.ig select{background:var(--inp);border:1px solid var(--border);color:var(--text);
+  padding:6px 9px;border-radius:4px;font-size:13px;outline:none;width:100%;font-family:inherit;
+  transition:border-color .18s}
+.ig input:focus,.ig select:focus{border-color:var(--accent)}
+.ig input.invalid{border-color:var(--err)!important;background:rgba(239,83,80,.07)}
+.ig input.solved{background:rgba(79,195,247,.08);border-color:var(--accent);
+  color:var(--accent);font-style:italic}
+.ig input:disabled{opacity:.38;cursor:not-allowed}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border-radius:var(--rad);border:none;cursor:pointer;
+  font-size:12.5px;font-weight:500;font-family:inherit;transition:all .18s;display:inline-flex;
+  align-items:center;gap:5px}
+.btn-primary{background:var(--accent);color:#0d1b2a}
+.btn-primary:hover{background:var(--accent2)}
+.btn-secondary{background:transparent;color:var(--accent);border:1px solid rgba(79,195,247,.4)}
+.btn-secondary:hover{background:rgba(79,195,247,.08)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid rgba(255,255,255,.1)}
+.btn-ghost:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.btn-xs{padding:3px 8px;font-size:11px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* RESULT DISPLAY */
+.result-card{background:rgba(79,195,247,.05);border:1px solid rgba(79,195,247,.25);
+  border-radius:8px;padding:16px;text-align:center;margin-bottom:14px}
+.result-big{font-size:42px;font-weight:700;color:var(--accent);
+  font-variant-numeric:tabular-nums;letter-spacing:-1px;line-height:1.1}
+.result-unit{font-size:12px;color:var(--text2);margin-top:3px}
+.result-sub{font-size:13px;color:var(--text2);margin-top:6px}
+
+/* EQUATION BOX */
+.eq-box{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;
+  padding:10px 14px;font-family:'Courier New',monospace;font-size:12px;color:var(--accent2);
+  margin-bottom:14px;overflow-x:auto;line-height:1.8;white-space:pre-wrap}
+
+/* STATUS */
+.status{font-size:11.5px;padding:6px 10px;border-radius:4px;margin-top:8px}
+.status.ok{background:rgba(102,187,106,.12);color:var(--ok)}
+.status.err{background:rgba(239,83,80,.12);color:var(--err)}
+.status.info{background:rgba(79,195,247,.1);color:var(--accent)}
+.status.warn{background:rgba(255,167,38,.1);color:var(--warn)}
+.status:empty{display:none}
+
+/* DATA TABLE */
+.dtable{width:100%;border-collapse:collapse;font-size:12px}
+.dtable th{text-align:left;padding:5px 10px;background:rgba(79,195,247,.08);
+  color:var(--accent);font-weight:600;border-bottom:1px solid var(--border)}
+.dtable td{padding:5px 10px;border-bottom:1px solid rgba(255,255,255,.04)}
+.dtable tr:hover td{background:rgba(255,255,255,.03)}
+.ion-k{color:var(--k)}.ion-na{color:var(--na)}.ion-cl{color:var(--cl)}.ion-ca{color:var(--ca)}
+
+/* CHART WRAP */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:8px;
+  padding:12px;margin-bottom:14px}
+.chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.chart-head span{font-size:11.5px;color:var(--text2);font-weight:500}
+.chart-canvas-wrap{position:relative}
+canvas{width:100%!important}
+
+/* DESCRIPTION */
+details.desc{background:rgba(0,0,0,.2);border-left:3px solid var(--accent);
+  border-radius:0 6px 6px 0;margin-bottom:14px}
+details.desc summary{cursor:pointer;color:var(--accent);font-size:12px;font-weight:600;
+  padding:8px 14px;user-select:none}
+details.desc .desc-body{padding:0 14px 10px;font-size:12px;color:var(--text2);line-height:1.7}
+
+/* SEPARATOR */
+.sep{border:none;border-top:1px solid var(--border);margin:12px 0}
+
+/* SOLVE-FOR ROW */
+.solve-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;
+  background:rgba(79,195,247,.04);border:1px solid var(--border);border-radius:6px;padding:8px 10px}
+.solve-row label{font-size:12px;color:var(--text2);white-space:nowrap}
+.solve-row select{flex:1;background:var(--inp);border:1px solid var(--border);color:var(--text);
+  padding:5px 8px;border-radius:4px;font-size:12.5px;outline:none;font-family:inherit}
+.solve-row select:focus{border-color:var(--accent)}
+
+/* PLACEHOLDER */
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:40vh;gap:12px;opacity:.5}
+.placeholder-icon{font-size:48px}
+.placeholder p{font-size:13px;color:var(--text2)}
+
+/* SECTION DIVIDER */
+.section-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;
+  letter-spacing:.8px;margin-bottom:8px}
+
+.radio-group{display:flex;gap:14px;flex-wrap:wrap}
+.radio-option{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12.5px}
+.radio-option input{accent-color:var(--accent);cursor:pointer}
+.t3-ca-row.hidden,.t4-cl-row.hidden,.t4-ca-row.hidden{display:none!important}
+#t8ManualBody td input{background:transparent;border:none;color:var(--text);
+  font-size:11.5px;padding:3px 4px;width:68px;outline:none;text-align:center}
+#t8ManualBody td input:focus{background:rgba(79,195,247,.08);border-radius:2px}
+#t8ManualBody td.vm-cell{font-weight:600;text-align:center;font-size:12px}
+.vm-hyper{color:#64b5f6}.vm-depol{color:#ef9a9a}.vm-mid{color:var(--text)}
+.matrix-table{border-collapse:collapse;font-size:11.5px;width:100%}
+.matrix-table th,.matrix-table td{padding:5px 8px;border:1px solid var(--border);text-align:center}
+.matrix-table th{background:rgba(79,195,247,.1);color:var(--accent)}
+.matrix-table td.diag{background:rgba(255,255,255,.04);color:var(--text2);font-style:italic}
+@media(max-width:900px){
+  .layout-2col{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr 1fr}
+}
+@media(max-width:580px){
+  .grid2,.grid3{grid-template-columns:1fr}
+  .result-big{font-size:32px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-title">GHK Simulator <span>Goldman-Hodgkin-Katz Interactive</span></div>
+  <div class="temp-wrap">
+    <label for="gTemp">T =&nbsp;</label>
+    <input type="number" id="gTemp" value="37" min="0" max="100" step="0.1" title="Global temperature for all calculations">
+    <span style="color:var(--text2);font-size:12px">°C</span>
+    <span class="nf">| RT/F = <span id="nfVal">26.7</span> mV</span>
+  </div>
+</header>
+
+<!-- TAB BAR -->
+<nav class="tabbar" id="tabBar">
+  <button class="tab-btn active" data-tab="t1">GHK 2-Ion</button>
+  <button class="tab-btn" data-tab="t2">GHK 3-Ion</button>
+  <button class="tab-btn" data-tab="t3">GHK 4-Ion</button>
+  <button class="tab-btn" data-tab="t4">P Ratio Solver</button>
+  <button class="tab-btn" data-tab="t5">Nernst</button>
+  <button class="tab-btn" data-tab="t6">GHK Current</button>
+  <button class="tab-btn" data-tab="t7">Sweep</button>
+  <button class="tab-btn" data-tab="t8">Batch</button>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB 1: GHK 2-Ion
+═══════════════════════════════════════════════════════ -->
+<section id="t1" class="tab-panel active">
+
+  <details class="desc">
+    <summary>About: GHK Voltage — 2 Ion (K⁺, Na⁺)</summary>
+    <div class="desc-body">The 2-ion Goldman-Hodgkin-Katz equation predicts the membrane potential (Vm) from K⁺ and Na⁺ concentrations and relative permeabilities, assuming constant electric field across the membrane (Goldman 1943; Hodgkin &amp; Katz 1949). At rest, P_K ≫ P_Na so Vm approaches E_K. During the action potential peak, Na⁺ channels open and P_Na dominates, driving Vm toward E_Na.</div>
+  </details>
+
+  <div class="eq-box" id="t1Eq">Vm = (RT/F) · ln[ (P_K · [K⁺]ₒ + P_Na · [Na⁺]ₒ) / (P_K · [K⁺]ᵢ + P_Na · [Na⁺]ᵢ) ] × 1000  [mV]</div>
+
+  <div class="layout-2col">
+    <!-- LEFT: Inputs -->
+    <div>
+      <div class="card">
+        <div class="solve-row">
+          <label>Solve for:</label>
+          <select id="t1Solve">
+            <option value="Vm">Vm (membrane potential)</option>
+            <option value="Ko">[K⁺]ₒ — extracellular K⁺</option>
+            <option value="Ki">[K⁺]ᵢ — intracellular K⁺</option>
+            <option value="Nao">[Na⁺]ₒ — extracellular Na⁺</option>
+            <option value="Nai">[Na⁺]ᵢ — intracellular Na⁺</option>
+            <option value="PK">P_K — K⁺ permeability</option>
+            <option value="PNa">P_Na — Na⁺ permeability</option>
+            <option value="ratio">P_K / P_Na ratio</option>
+          </select>
+        </div>
+
+        <div class="section-label">Concentrations</div>
+        <div class="grid2" style="margin-bottom:10px">
+          <div class="ig" id="ig-t1-Ko">
+            <label>[K⁺]ₒ <span class="unit">mM</span>
+              <span class="tip" data-tip="Extracellular potassium concentration.&#10;Typical physiological: 5 mM.&#10;↑ Ko → Vm depolarizes.">?</span>
+            </label>
+            <input type="number" id="t1Ko" value="5" min="0" step="0.1">
+          </div>
+          <div class="ig" id="ig-t1-Ki">
+            <label>[K⁺]ᵢ <span class="unit">mM</span>
+              <span class="tip" data-tip="Intracellular potassium concentration.&#10;Typical: 140 mM.&#10;High [K⁺]i drives resting Vm negative.">?</span>
+            </label>
+            <input type="number" id="t1Ki" value="140" min="0" step="1">
+          </div>
+          <div class="ig" id="ig-t1-Nao">
+            <label>[Na⁺]ₒ <span class="unit">mM</span>
+              <span class="tip" data-tip="Extracellular sodium concentration.&#10;Typical: 145 mM.&#10;Sets Nernst potential E_Na ≈ +67 mV.">?</span>
+            </label>
+            <input type="number" id="t1Nao" value="145" min="0" step="1">
+          </div>
+          <div class="ig" id="ig-t1-Nai">
+            <label>[Na⁺]ᵢ <span class="unit">mM</span>
+              <span class="tip" data-tip="Intracellular sodium concentration.&#10;Typical: 12 mM.&#10;Maintained low by Na⁺/K⁺-ATPase.">?</span>
+            </label>
+            <input type="number" id="t1Nai" value="12" min="0" step="0.5">
+          </div>
+        </div>
+
+        <div class="section-label">Permeabilities (relative)</div>
+        <div class="grid2" style="margin-bottom:10px">
+          <div class="ig" id="ig-t1-PK">
+            <label>P_K
+              <span class="tip" data-tip="Relative K⁺ permeability.&#10;Normalized to 1.0 by convention.&#10;Scales with open K⁺ channel density.">?</span>
+            </label>
+            <input type="number" id="t1PK" value="1" min="0" step="0.01">
+          </div>
+          <div class="ig" id="ig-t1-PNa">
+            <label>P_Na
+              <span class="tip" data-tip="Relative Na⁺ permeability.&#10;Resting: ~0.04 (P_K/P_Na ≈ 25).&#10;Action potential peak: >10.">?</span>
+            </label>
+            <input type="number" id="t1PNa" value="0.04" min="0" step="0.001">
+          </div>
+        </div>
+
+        <!-- Target Vm (shown when solving for Vm is NOT selected) -->
+        <div class="ig" id="ig-t1-Vm" style="display:none;margin-bottom:10px">
+          <label>Target Vm <span class="unit">mV</span>
+            <span class="tip" data-tip="Measured membrane potential.&#10;Used to back-calculate unknowns.">?</span>
+          </label>
+          <input type="number" id="t1Vm" value="-70" step="1">
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="t1Calc">▶ Calculate</button>
+          <button class="btn btn-secondary" id="t1Preset">Physiological Preset</button>
+          <button class="btn btn-ghost" id="t1Reset">Reset</button>
+        </div>
+        <div class="status" id="t1Status"></div>
+      </div>
+
+      <!-- Live Equation Substitution -->
+      <div class="card" id="t1SubCard">
+        <div class="card-title">Substituted Equation</div>
+        <div class="eq-box" style="margin-bottom:0;font-size:11px" id="t1SubEq">—</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Outputs -->
+    <div>
+      <div class="result-card" id="t1ResultCard">
+        <div class="result-big" id="t1VmOut">—</div>
+        <div class="result-unit" id="t1VmLabel">mV &nbsp;(membrane potential)</div>
+        <div class="result-sub" id="t1RatioOut"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Nernst Potentials &amp; Driving Forces</div>
+        <table class="dtable">
+          <thead>
+            <tr>
+              <th>Ion</th><th>E_ion (mV)</th><th>Driving Force (mV)</th><th>Direction</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="ion-k">K⁺</span></td>
+              <td id="t1Ek">—</td><td id="t1DFk">—</td><td id="t1Dirk">—</td>
+            </tr>
+            <tr>
+              <td><span class="ion-na">Na⁺</span></td>
+              <td id="t1Ena">—</td><td id="t1DFna">—</td><td id="t1Dirna">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-head">
+          <span>Weighted Ion Contributions (Numerator &amp; Denominator)</span>
+          <button class="btn btn-ghost btn-xs" id="t1DlChart">↓ PNG</button>
+        </div>
+        <div class="chart-canvas-wrap" style="height:220px">
+          <canvas id="t1Chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB 2: GHK 3-Ion
+═══════════════════════════════════════════════════════ -->
+<section id="t2" class="tab-panel">
+
+  <details class="desc">
+    <summary>About: GHK Voltage — 3 Ion (K⁺, Na⁺, Cl⁻)</summary>
+    <div class="desc-body">Extends the GHK equation with chloride (Cl⁻, z = −1). Because Cl⁻ is an anion, its inside and outside concentrations are swapped in the logarithm. At physiological values (P_Cl ≈ 0.45), Cl⁻ typically stabilizes Vm near E_K. Inhibitory GABA-A receptors increase P_Cl, pulling Vm toward E_Cl (hyperpolarization or shunting inhibition).</div>
+  </details>
+
+  <div class="eq-box">Vm = (RT/F) · ln[ (P_K·[K⁺]ₒ + P_Na·[Na⁺]ₒ + P_Cl·[Cl⁻]ᵢ) / (P_K·[K⁺]ᵢ + P_Na·[Na⁺]ᵢ + P_Cl·[Cl⁻]ₒ) ] × 1000  [mV]
+Note: Cl⁻ terms are swapped (inside in numerator, outside in denominator) because z = −1.</div>
+
+  <div class="layout-2col">
+    <div>
+      <div class="card">
+        <div class="solve-row">
+          <label>Solve for:</label>
+          <select id="t2Solve">
+            <option value="Vm">Vm (membrane potential)</option>
+            <option value="Ko">[K⁺]ₒ</option>
+            <option value="Ki">[K⁺]ᵢ</option>
+            <option value="Nao">[Na⁺]ₒ</option>
+            <option value="Nai">[Na⁺]ᵢ</option>
+            <option value="Clo">[Cl⁻]ₒ</option>
+            <option value="Cli">[Cl⁻]ᵢ</option>
+            <option value="PK">P_K</option>
+            <option value="PNa">P_Na</option>
+            <option value="PCl">P_Cl</option>
+            <option value="PKNa">P_K / P_Na ratio</option>
+            <option value="PKCl">P_K / P_Cl ratio</option>
+            <option value="PNaCl">P_Na / P_Cl ratio</option>
+          </select>
+        </div>
+
+        <div class="section-label">Concentrations</div>
+        <div class="grid3" style="margin-bottom:10px">
+          <div class="ig" id="ig-t2-Ko">
+            <label>[K⁺]ₒ <span class="unit">mM</span><span class="tip" data-tip="Extracellular K⁺. Typical: 5 mM.">?</span></label>
+            <input type="number" id="t2Ko" value="5" min="0" step="0.1">
+          </div>
+          <div class="ig" id="ig-t2-Ki">
+            <label>[K⁺]ᵢ <span class="unit">mM</span><span class="tip" data-tip="Intracellular K⁺. Typical: 140 mM.">?</span></label>
+            <input type="number" id="t2Ki" value="140" min="0" step="1">
+          </div>
+          <div class="ig" id="ig-t2-Nao">
+            <label>[Na⁺]ₒ <span class="unit">mM</span><span class="tip" data-tip="Extracellular Na⁺. Typical: 145 mM.">?</span></label>
+            <input type="number" id="t2Nao" value="145" min="0" step="1">
+          </div>
+          <div class="ig" id="ig-t2-Nai">
+            <label>[Na⁺]ᵢ <span class="unit">mM</span><span class="tip" data-tip="Intracellular Na⁺. Typical: 12 mM.">?</span></label>
+            <input type="number" id="t2Nai" value="12" min="0" step="0.5">
+          </div>
+          <div class="ig" id="ig-t2-Clo">
+            <label>[Cl⁻]ₒ <span class="unit">mM</span><span class="tip" data-tip="Extracellular Cl⁻. Typical: 110 mM.&#10;High outside drives Cl⁻ inward.">?</span></label>
+            <input type="number" id="t2Clo" value="110" min="0" step="1">
+          </div>
+          <div class="ig" id="ig-t2-Cli">
+            <label>[Cl⁻]ᵢ <span class="unit">mM</span><span class="tip" data-tip="Intracellular Cl⁻. Typical: 4–10 mM.&#10;Set by KCC2 cotransporter in neurons.">?</span></label>
+            <input type="number" id="t2Cli" value="4" min="0" step="0.5">
+          </div>
+        </div>
+
+        <div class="section-label">Permeabilities (relative)</div>
+        <div class="grid3" style="margin-bottom:10px">
+          <div class="ig" id="ig-t2-PK">
+            <label>P_K<span class="tip" data-tip="Relative K⁺ permeability. Reference = 1.0.">?</span></label>
+            <input type="number" id="t2PK" value="1" min="0" step="0.01">
+          </div>
+          <div class="ig" id="ig-t2-PNa">
+            <label>P_Na<span class="tip" data-tip="Relative Na⁺ permeability. Resting: ~0.04.">?</span></label>
+            <input type="number" id="t2PNa" value="0.04" min="0" step="0.001">
+          </div>
+          <div class="ig" id="ig-t2-PCl">
+            <label>P_Cl<span class="tip" data-tip="Relative Cl⁻ permeability.&#10;Resting neurons: ~0.45.&#10;↑ during GABA-A activation.">?</span></label>
+            <input type="number" id="t2PCl" value="0.45" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="ig" id="ig-t2-Vm" style="display:none;margin-bottom:10px">
+          <label>Target Vm <span class="unit">mV</span></label>
+          <input type="number" id="t2Vm" value="-70" step="1">
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="t2Calc">▶ Calculate</button>
+          <button class="btn btn-secondary" id="t2Preset">Physiological Preset</button>
+          <button class="btn btn-ghost" id="t2Reset">Reset</button>
+        </div>
+        <div class="status" id="t2Status"></div>
+      </div>
+
+      <div class="card" id="t2SubCard">
+        <div class="card-title">Substituted Equation</div>
+        <div class="eq-box" style="margin-bottom:0;font-size:11px" id="t2SubEq">—</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="result-card">
+        <div class="result-big" id="t2VmOut">—</div>
+        <div class="result-unit" id="t2VmLabel">mV &nbsp;(membrane potential)</div>
+        <div class="result-sub" id="t2RatioOut"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Nernst Potentials, Driving Forces &amp; Weights</div>
+        <table class="dtable">
+          <thead>
+            <tr><th>Ion</th><th>E_ion (mV)</th><th>Driving Force (mV)</th><th>Direction</th><th>P·[ion]</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="ion-k">K⁺</span></td>
+              <td id="t2Ek">—</td><td id="t2DFk">—</td><td id="t2Dirk">—</td><td id="t2Wk">—</td>
+            </tr>
+            <tr>
+              <td><span class="ion-na">Na⁺</span></td>
+              <td id="t2Ena">—</td><td id="t2DFna">—</td><td id="t2Dirna">—</td><td id="t2Wna">—</td>
+            </tr>
+            <tr>
+              <td><span class="ion-cl">Cl⁻</span></td>
+              <td id="t2Ecl">—</td><td id="t2DFcl">—</td><td id="t2Dircl">—</td><td id="t2Wcl">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid2">
+        <div class="chart-wrap">
+          <div class="chart-head">
+            <span>Numerator contributions</span>
+            <button class="btn btn-ghost btn-xs" id="t2DlPie1">↓ PNG</button>
+          </div>
+          <div style="height:200px"><canvas id="t2Pie1"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-head">
+            <span>Denominator contributions</span>
+            <button class="btn btn-ghost btn-xs" id="t2DlPie2">↓ PNG</button>
+          </div>
+          <div style="height:200px"><canvas id="t2Pie2"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     TABS 3-8: Placeholders (Phase 2+)
+═══════════════════════════════════════════════════════ -->
+<!-- ═══ TAB 3: 4-ION GHK ═══ -->
+<section id="t3" class="tab-panel">
+  <details class="desc">
+    <summary>About: GHK 4-Ion (K⁺, Na⁺, Cl⁻, Ca²⁺)</summary>
+    <div class="desc-body">Adding Ca²⁺ (z=+2) makes the GHK equation implicit — Vm appears on both sides — so the reversal potential is found numerically by setting the total ionic current = 0. Physiological [Ca²⁺]ᵢ ≈ 0.0001 mM (100 nM), [Ca²⁺]ₒ ≈ 2 mM. Despite the huge gradient, low P_Ca keeps Ca²⁺ contribution small at rest.</div>
+  </details>
+  <div class="eq-box">Condition: J_K + J_Na + J_Cl + J_Ca = 0  (solved numerically for Vm)
+Each: Jᵢ = Pᵢ·z²·F²·Vm/RT · (cᵢ − cₒ·exp(−zFVm/RT)) / (1−exp(−zFVm/RT))</div>
+
+  <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+      <input type="checkbox" id="t3CaOn" checked style="accent-color:var(--ca);width:15px;height:15px">
+      <span style="color:var(--ca)">Include Ca²⁺</span>
+    </label>
+    <span id="t3Mode" style="font-size:11px;color:var(--text2)">(4-ion mode — implicit bisection)</span>
+  </div>
+
+  <div class="layout-2col">
+    <div>
+      <div class="card">
+        <div class="solve-row">
+          <label>Solve for:</label>
+          <select id="t3Solve">
+            <option value="Vm">Vm</option>
+            <option value="Ko">[K⁺]ₒ</option><option value="Ki">[K⁺]ᵢ</option>
+            <option value="Nao">[Na⁺]ₒ</option><option value="Nai">[Na⁺]ᵢ</option>
+            <option value="Clo">[Cl⁻]ₒ</option><option value="Cli">[Cl⁻]ᵢ</option>
+            <option value="Cao">[Ca²⁺]ₒ</option><option value="Cai">[Ca²⁺]ᵢ</option>
+            <option value="PK">P_K</option><option value="PNa">P_Na</option>
+            <option value="PCl">P_Cl</option><option value="PCa">P_Ca</option>
+          </select>
+        </div>
+        <div class="section-label">Concentrations</div>
+        <div class="grid3" style="margin-bottom:10px">
+          <div class="ig" id="ig-t3-Ko"><label>[K⁺]ₒ <span class="unit">mM</span></label><input type="number" id="t3Ko" value="5" min="0" step="0.1"></div>
+          <div class="ig" id="ig-t3-Ki"><label>[K⁺]ᵢ <span class="unit">mM</span></label><input type="number" id="t3Ki" value="140" min="0" step="1"></div>
+          <div class="ig" id="ig-t3-Nao"><label>[Na⁺]ₒ <span class="unit">mM</span></label><input type="number" id="t3Nao" value="145" min="0" step="1"></div>
+          <div class="ig" id="ig-t3-Nai"><label>[Na⁺]ᵢ <span class="unit">mM</span></label><input type="number" id="t3Nai" value="12" min="0" step="0.5"></div>
+          <div class="ig" id="ig-t3-Clo"><label>[Cl⁻]ₒ <span class="unit">mM</span></label><input type="number" id="t3Clo" value="110" min="0" step="1"></div>
+          <div class="ig" id="ig-t3-Cli"><label>[Cl⁻]ᵢ <span class="unit">mM</span></label><input type="number" id="t3Cli" value="4" min="0" step="0.5"></div>
+          <div class="ig t3-ca-row" id="ig-t3-Cao"><label>[Ca²⁺]ₒ <span class="unit">mM</span><span class="tip" data-tip="Extracellular Ca²⁺. Typical: 2 mM.">?</span></label><input type="number" id="t3Cao" value="2" min="0" step="0.1"></div>
+          <div class="ig t3-ca-row" id="ig-t3-Cai"><label>[Ca²⁺]ᵢ <span class="unit">mM</span><span class="tip" data-tip="Intracellular Ca²⁺. Resting: ~0.0001 mM (100 nM).">?</span></label><input type="number" id="t3Cai" value="0.0001" min="0" step="0.00001"></div>
+        </div>
+        <div class="section-label">Permeabilities (relative)</div>
+        <div class="grid3" style="margin-bottom:10px">
+          <div class="ig" id="ig-t3-PK"><label>P_K</label><input type="number" id="t3PK" value="1" min="0" step="0.01"></div>
+          <div class="ig" id="ig-t3-PNa"><label>P_Na</label><input type="number" id="t3PNa" value="0.04" min="0" step="0.001"></div>
+          <div class="ig" id="ig-t3-PCl"><label>P_Cl</label><input type="number" id="t3PCl" value="0.45" min="0" step="0.01"></div>
+          <div class="ig t3-ca-row" id="ig-t3-PCa"><label>P_Ca<span class="tip" data-tip="Ca²⁺ permeability relative to P_K=1.&#10;Typical: 0.000001–0.01.&#10;Very low keeps Ca²⁺ contribution small.">?</span></label><input type="number" id="t3PCa" value="0.000001" min="0" step="0.000001"></div>
+        </div>
+        <div class="ig" id="ig-t3-Vm" style="display:none;margin-bottom:10px">
+          <label>Target Vm <span class="unit">mV</span></label><input type="number" id="t3Vm" value="-70" step="1">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="t3Calc">▶ Calculate</button>
+          <button class="btn btn-secondary" id="t3Preset">Physiological Preset</button>
+          <button class="btn btn-ghost" id="t3Reset">Reset</button>
+        </div>
+        <div class="status" id="t3Status"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="result-card">
+        <div class="result-big" id="t3VmOut">—</div>
+        <div class="result-unit">mV (membrane potential — implicit solution)</div>
+        <div class="result-sub" id="t3IterOut"></div>
+      </div>
+      <div id="t3WarnBox" style="display:none" class="status warn" id="t3Warn"></div>
+      <div class="card">
+        <div class="card-title">Nernst Potentials &amp; Driving Forces</div>
+        <table class="dtable">
+          <thead><tr><th>Ion</th><th>E_ion (mV)</th><th>Driving Force</th><th>Direction</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ion-k">K⁺</span></td><td id="t3Ek">—</td><td id="t3DFk">—</td><td id="t3Dirk">—</td></tr>
+            <tr><td><span class="ion-na">Na⁺</span></td><td id="t3Ena">—</td><td id="t3DFna">—</td><td id="t3Dirna">—</td></tr>
+            <tr><td><span class="ion-cl">Cl⁻</span></td><td id="t3Ecl">—</td><td id="t3DFcl">—</td><td id="t3Dircl">—</td></tr>
+            <tr class="t3-ca-row"><td><span class="ion-ca">Ca²⁺</span></td><td id="t3Eca">—</td><td id="t3DFca">—</td><td id="t3Dirca">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-head"><span>Ion Current Contributions at Vm</span><button class="btn btn-ghost btn-xs" id="t3DlChart">↓ PNG</button></div>
+        <div style="height:220px"><canvas id="t3Chart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TAB 4: PERMEABILITY RATIO SOLVER ═══ -->
+<section id="t4" class="tab-panel">
+  <details class="desc">
+    <summary>About: Permeability Ratio Solver</summary>
+    <div class="desc-body">Experimentalists measure the reversal potential (Vm) and ionic concentrations, then back-calculate permeability ratios. Mode A gives the exact analytical formula for P_K/P_Na. Modes B–C use numerical inversion. Mode D shows the full pairwise ratio matrix. Mode E plots the ratio curve.</div>
+  </details>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">Mode</div>
+    <div class="radio-group" id="t4ModeGroup">
+      <label class="radio-option"><input type="radio" name="t4mode" value="A" checked> A — 2-ion: find P_K/P_Na</label>
+      <label class="radio-option"><input type="radio" name="t4mode" value="B"> B — 3-ion: find any ratio</label>
+      <label class="radio-option"><input type="radio" name="t4mode" value="C"> C — 4-ion with Ca²⁺</label>
+      <label class="radio-option"><input type="radio" name="t4mode" value="D"> D — Full ratio matrix</label>
+      <label class="radio-option"><input type="radio" name="t4mode" value="E"> E — Ratio curve (Vm vs ratio)</label>
+    </div>
+  </div>
+
+  <div class="layout-2col">
+    <div>
+      <!-- SHARED: Vm + K/Na inputs -->
+      <div class="card" id="t4InputCard">
+        <div class="card-title">Known Values</div>
+        <div class="grid2" style="margin-bottom:10px">
+          <div class="ig"><label>Measured Vm <span class="unit">mV</span></label><input type="number" id="t4Vm" value="-70" step="1"></div>
+          <div class="ig t4-ratio-sel" id="t4RatioSelWrap" style="display:none">
+            <label>Solve for ratio</label>
+            <select id="t4RatioSel">
+              <option value="PKNa">P_K / P_Na</option>
+              <option value="PKCl">P_K / P_Cl</option>
+              <option value="PNaCl">P_Na / P_Cl</option>
+            </select>
+          </div>
+        </div>
+        <div class="section-label">Concentrations (mM)</div>
+        <div class="grid3" style="margin-bottom:10px">
+          <div class="ig"><label>[K⁺]ₒ</label><input type="number" id="t4Ko" value="5" min="0" step="0.1"></div>
+          <div class="ig"><label>[K⁺]ᵢ</label><input type="number" id="t4Ki" value="140" min="0" step="1"></div>
+          <div class="ig"><label>[Na⁺]ₒ</label><input type="number" id="t4Nao" value="145" min="0" step="1"></div>
+          <div class="ig"><label>[Na⁺]ᵢ</label><input type="number" id="t4Nai" value="12" min="0" step="0.5"></div>
+          <div class="ig t4-cl-row"><label>[Cl⁻]ₒ</label><input type="number" id="t4Clo" value="110" min="0" step="1"></div>
+          <div class="ig t4-cl-row"><label>[Cl⁻]ᵢ</label><input type="number" id="t4Cli" value="4" min="0" step="0.5"></div>
+          <div class="ig t4-ca-row"><label>[Ca²⁺]ₒ</label><input type="number" id="t4Cao" value="2" min="0" step="0.1"></div>
+          <div class="ig t4-ca-row"><label>[Ca²⁺]ᵢ</label><input type="number" id="t4Cai" value="0.0001" min="0" step="0.00001"></div>
+        </div>
+
+        <!-- Mode B/C: fix known perms -->
+        <div id="t4PermFix" style="display:none">
+          <div class="section-label">Known Permeabilities (fix others)</div>
+          <div class="grid3">
+            <div class="ig"><label>P_K (fix)</label><input type="number" id="t4PKfix" value="1" min="0" step="0.01"></div>
+            <div class="ig t4-cl-row"><label>P_Cl (fix)</label><input type="number" id="t4PClfix" value="0.45" min="0" step="0.01"></div>
+            <div class="ig t4-ca-row"><label>P_Ca (fix)</label><input type="number" id="t4PCafix" value="0.000001" min="0" step="0.000001"></div>
+          </div>
+        </div>
+
+        <!-- Mode D: all perms -->
+        <div id="t4PermAll" style="display:none">
+          <div class="section-label">All Permeabilities</div>
+          <div class="grid3">
+            <div class="ig"><label>P_K</label><input type="number" id="t4PKd" value="1" min="0" step="0.01"></div>
+            <div class="ig"><label>P_Na</label><input type="number" id="t4PNad" value="0.04" min="0" step="0.001"></div>
+            <div class="ig"><label>P_Cl</label><input type="number" id="t4PCld" value="0.45" min="0" step="0.01"></div>
+            <div class="ig"><label>P_Ca</label><input type="number" id="t4PCad" value="0.000001" min="0" step="0.000001"></div>
+          </div>
+        </div>
+
+        <!-- Mode E: sweep config -->
+        <div id="t4SweepConf" style="display:none">
+          <div class="section-label">Ratio Sweep (P_K/P_Na)</div>
+          <div class="grid3">
+            <div class="ig"><label>Min ratio</label><input type="number" id="t4SweepMin" value="0.001" min="0" step="0.001"></div>
+            <div class="ig"><label>Max ratio</label><input type="number" id="t4SweepMax" value="100" step="1"></div>
+            <div class="ig"><label>Fix P_Cl</label><input type="number" id="t4SweepPCl" value="0.45" min="0" step="0.01"></div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="t4Calc">▶ Solve</button>
+          <button class="btn btn-secondary" id="t4Preset">Physiological Preset</button>
+        </div>
+        <div class="status" id="t4Status"></div>
+      </div>
+    </div>
+
+    <div>
+      <!-- Mode A: big result + formula -->
+      <div id="t4ResultA">
+        <div class="result-card">
+          <div class="result-big" id="t4RatioOut">—</div>
+          <div class="result-unit" id="t4RatioLabel">P_K / P_Na</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Analytical Formula</div>
+          <div class="eq-box" style="margin-bottom:8px;font-size:11.5px" id="t4Formula">P_K/P_Na = (Nao − Nai·exp(FVm/RT)) / (Ki·exp(FVm/RT) − Ko)</div>
+          <div class="eq-box" style="margin-bottom:0;font-size:11px" id="t4FormulaSub">—</div>
+        </div>
+        <div class="card" id="t4SensCard">
+          <div class="card-title">Sensitivity (±1 mV)</div>
+          <table class="dtable" id="t4SensTable">
+            <thead><tr><th>Vm</th><th>P_K/P_Na</th><th>Δ ratio</th><th>% change</th></tr></thead>
+            <tbody id="t4SensTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mode B/C: ratio result -->
+      <div id="t4ResultBC" style="display:none">
+        <div class="result-card">
+          <div class="result-big" id="t4BCRatioOut">—</div>
+          <div class="result-unit" id="t4BCLabel">ratio</div>
+        </div>
+        <div class="status" id="t4BCIter"></div>
+      </div>
+
+      <!-- Mode D: matrix table -->
+      <div id="t4ResultD" style="display:none">
+        <div class="card">
+          <div class="card-title">Pairwise Permeability Ratio Matrix</div>
+          <div id="t4MatrixWrap"></div>
+        </div>
+      </div>
+
+      <!-- Mode E: ratio curve -->
+      <div id="t4ResultE" style="display:none">
+        <div class="chart-wrap">
+          <div class="chart-head"><span>Vm vs P_K/P_Na (log scale)</span><button class="btn btn-ghost btn-xs" id="t4DlChart">↓ PNG</button></div>
+          <div style="height:280px"><canvas id="t4Chart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ═══ TAB 5: NERNST COMPANION ═══ -->
+<section id="t5" class="tab-panel">
+  <details class="desc">
+    <summary>About: Nernst Companion</summary>
+    <div class="desc-body">The Nernst equation gives the equilibrium potential for each ion individually. The GHK voltage is a permeability-weighted average lying between the Nernst potentials. Driving force = Vm − E_ion: positive means ion flows outward, negative means inward.</div>
+  </details>
+  <div class="layout-2col">
+    <div>
+      <div class="card">
+        <div class="card-title">Ion Concentrations &amp; Permeabilities</div>
+        <div class="grid3" style="margin-bottom:10px">
+          <div class="ig"><label>[K⁺]ₒ <span class="unit">mM</span></label><input type="number" id="t5Ko" value="5" min="0" step="0.1"></div>
+          <div class="ig"><label>[K⁺]ᵢ <span class="unit">mM</span></label><input type="number" id="t5Ki" value="140" min="0" step="1"></div>
+          <div class="ig"><label>[Na⁺]ₒ <span class="unit">mM</span></label><input type="number" id="t5Nao" value="145" min="0" step="1"></div>
+          <div class="ig"><label>[Na⁺]ᵢ <span class="unit">mM</span></label><input type="number" id="t5Nai" value="12" min="0" step="0.5"></div>
+          <div class="ig"><label>[Cl⁻]ₒ <span class="unit">mM</span></label><input type="number" id="t5Clo" value="110" min="0" step="1"></div>
+          <div class="ig"><label>[Cl⁻]ᵢ <span class="unit">mM</span></label><input type="number" id="t5Cli" value="4" min="0" step="0.5"></div>
+          <div class="ig"><label>[Ca²⁺]ₒ <span class="unit">mM</span></label><input type="number" id="t5Cao" value="2" min="0" step="0.1"></div>
+          <div class="ig"><label>[Ca²⁺]ᵢ <span class="unit">mM</span></label><input type="number" id="t5Cai" value="0.0001" min="0" step="0.00001"></div>
+        </div>
+        <div class="grid3" style="margin-bottom:10px">
+          <div class="ig"><label>P_K</label><input type="number" id="t5PK" value="1" min="0" step="0.01"></div>
+          <div class="ig"><label>P_Na</label><input type="number" id="t5PNa" value="0.04" min="0" step="0.001"></div>
+          <div class="ig"><label>P_Cl</label><input type="number" id="t5PCl" value="0.45" min="0" step="0.01"></div>
+          <div class="ig"><label>P_Ca</label><input type="number" id="t5PCa" value="0.000001" min="0" step="0.000001"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="t5Calc">▶ Calculate</button>
+          <button class="btn btn-secondary" id="t5Preset">Preset</button>
+          <button class="btn btn-ghost" id="t5Reset">Reset</button>
+        </div>
+        <div class="status" id="t5Status"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Summary</div>
+        <div id="t5Summary" style="font-size:12.5px;color:var(--text2);line-height:1.8">—</div>
+      </div>
+    </div>
+    <div>
+      <div class="chart-wrap">
+        <div class="chart-head"><span>Nernst Potentials vs GHK Vm</span><button class="btn btn-ghost btn-xs" id="t5DlBar">↓ PNG</button></div>
+        <div style="height:260px"><canvas id="t5Bar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Ion Summary Table</div>
+        <table class="dtable">
+          <thead><tr><th>Ion</th><th>z</th><th>E_ion (mV)</th><th>Driving Force (mV)</th><th>Direction</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ion-k">K⁺</span></td><td>+1</td><td id="t5Ek">—</td><td id="t5DFk">—</td><td id="t5Dirk">—</td></tr>
+            <tr><td><span class="ion-na">Na⁺</span></td><td>+1</td><td id="t5Ena">—</td><td id="t5DFna">—</td><td id="t5Dirna">—</td></tr>
+            <tr><td><span class="ion-cl">Cl⁻</span></td><td>−1</td><td id="t5Ecl">—</td><td id="t5DFcl">—</td><td id="t5Dircl">—</td></tr>
+            <tr><td><span class="ion-ca">Ca²⁺</span></td><td>+2</td><td id="t5Eca">—</td><td id="t5DFca">—</td><td id="t5Dirca">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TAB 6: GHK CURRENT DENSITY ═══ -->
+<section id="t6" class="tab-panel">
+  <details class="desc">
+    <summary>About: GHK Current Density</summary>
+    <div class="desc-body">GHK current density per ion: J = P·z²·F²·Vm/RT·(cᵢ−cₒ·exp(−zFVm/RT))/(1−exp(−zFVm/RT)). Units depend on P units; using relative permeabilities gives dimensionless relative current. At the reversal potential the total current = 0. The I-V curve shows each ion's current from −100 to +100 mV.</div>
+  </details>
+  <div class="layout-2col">
+    <div>
+      <div class="card">
+        <div class="section-label">Concentrations (mM)</div>
+        <div class="grid3" style="margin-bottom:10px">
+          <div class="ig"><label>[K⁺]ₒ</label><input type="number" id="t6Ko" value="5" min="0" step="0.1"></div>
+          <div class="ig"><label>[K⁺]ᵢ</label><input type="number" id="t6Ki" value="140" min="0" step="1"></div>
+          <div class="ig"><label>[Na⁺]ₒ</label><input type="number" id="t6Nao" value="145" min="0" step="1"></div>
+          <div class="ig"><label>[Na⁺]ᵢ</label><input type="number" id="t6Nai" value="12" min="0" step="0.5"></div>
+          <div class="ig"><label>[Cl⁻]ₒ</label><input type="number" id="t6Clo" value="110" min="0" step="1"></div>
+          <div class="ig"><label>[Cl⁻]ᵢ</label><input type="number" id="t6Cli" value="4" min="0" step="0.5"></div>
+          <div class="ig"><label>[Ca²⁺]ₒ</label><input type="number" id="t6Cao" value="2" min="0" step="0.1"></div>
+          <div class="ig"><label>[Ca²⁺]ᵢ</label><input type="number" id="t6Cai" value="0.0001" min="0" step="0.00001"></div>
+        </div>
+        <div class="section-label">Permeabilities</div>
+        <div class="grid3" style="margin-bottom:10px">
+          <div class="ig"><label>P_K</label><input type="number" id="t6PK" value="1" min="0" step="0.01"></div>
+          <div class="ig"><label>P_Na</label><input type="number" id="t6PNa" value="0.04" min="0" step="0.001"></div>
+          <div class="ig"><label>P_Cl</label><input type="number" id="t6PCl" value="0.45" min="0" step="0.01"></div>
+          <div class="ig"><label>P_Ca</label><input type="number" id="t6PCa" value="0.000001" min="0" step="0.000001"></div>
+        </div>
+        <div class="ig" style="margin-bottom:10px">
+          <label>Vm (for single-point current) <span class="unit">mV</span>
+            <span class="tip" data-tip="Set to any voltage to compute current at that point.&#10;Or click 'Use GHK Vm' to auto-fill reversal potential.">?</span>
+          </label>
+          <input type="number" id="t6Vm" value="-70" step="1">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="t6Calc">▶ Calculate</button>
+          <button class="btn btn-secondary" id="t6UseGHK">Use GHK Vm</button>
+          <button class="btn btn-ghost" id="t6Preset">Preset</button>
+        </div>
+        <div class="status" id="t6Status"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Current at Vm</div>
+        <table class="dtable">
+          <thead><tr><th>Ion</th><th>J (rel. units)</th><th>Direction</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ion-k">K⁺</span></td><td id="t6Jk">—</td><td id="t6DirJk">—</td></tr>
+            <tr><td><span class="ion-na">Na⁺</span></td><td id="t6Jna">—</td><td id="t6DirJna">—</td></tr>
+            <tr><td><span class="ion-cl">Cl⁻</span></td><td id="t6Jcl">—</td><td id="t6DirJcl">—</td></tr>
+            <tr><td><span class="ion-ca">Ca²⁺</span></td><td id="t6Jca">—</td><td id="t6DirJca">—</td></tr>
+            <tr style="font-weight:600"><td>Total</td><td id="t6Jtot">—</td><td id="t6TotNote">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="chart-wrap">
+        <div class="chart-head"><span>I-V Curve (−100 to +100 mV)</span><button class="btn btn-ghost btn-xs" id="t6DlIV">↓ PNG</button></div>
+        <div style="height:300px"><canvas id="t6IV"></canvas></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-head"><span>Current at Vm (stacked bar)</span><button class="btn btn-ghost btn-xs" id="t6DlBar">↓ PNG</button></div>
+        <div style="height:160px"><canvas id="t6Bar"></canvas></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TAB 7: SWEEP ═══ -->
+<section id="t7" class="tab-panel">
+  <details class="desc">
+    <summary>About: Sweep / Sensitivity Analysis</summary>
+    <div class="desc-body">Sweep any single parameter over a range and observe how Vm changes. Add up to 5 curves with different fixed values to compare scenarios. The physiological range is highlighted on the x-axis. Use log scale for permeability ratios. Export chart as PNG or data as CSV.</div>
+  </details>
+  <div class="layout-2col">
+    <div>
+      <div class="card">
+        <div class="card-title">Sweep Configuration</div>
+        <div class="ig" style="margin-bottom:10px">
+          <label>Sweep variable</label>
+          <select id="t7Var">
+            <option value="Ko">[K⁺]ₒ (mM)</option>
+            <option value="Ki">[K⁺]ᵢ (mM)</option>
+            <option value="Nao">[Na⁺]ₒ (mM)</option>
+            <option value="Nai">[Na⁺]ᵢ (mM)</option>
+            <option value="Clo">[Cl⁻]ₒ (mM)</option>
+            <option value="Cli">[Cl⁻]ᵢ (mM)</option>
+            <option value="Cao">[Ca²⁺]ₒ (mM)</option>
+            <option value="Cai">[Ca²⁺]ᵢ (mM)</option>
+            <option value="PK">P_K</option>
+            <option value="PNa">P_Na</option>
+            <option value="PCl">P_Cl</option>
+            <option value="PCa">P_Ca</option>
+            <option value="ratio_KNa">P_K/P_Na ratio</option>
+            <option value="ratio_KCl">P_K/P_Cl ratio</option>
+            <option value="Temp">Temperature (°C)</option>
+          </select>
+        </div>
+        <div class="grid3" style="margin-bottom:10px">
+          <div class="ig"><label>Min</label><input type="number" id="t7Min" value="1" step="any"></div>
+          <div class="ig"><label>Max</label><input type="number" id="t7Max" value="20" step="any"></div>
+          <div class="ig"><label>Steps</label><input type="number" id="t7Steps" value="100" min="2" max="1000" step="1"></div>
+        </div>
+        <div class="radio-group" style="margin-bottom:10px">
+          <label class="radio-option"><input type="radio" name="t7scale" value="linear" checked> Linear</label>
+          <label class="radio-option"><input type="radio" name="t7scale" value="log"> Log</label>
+        </div>
+        <div class="card-title" style="margin-top:4px">Fixed Parameters</div>
+        <div class="grid3" style="margin-bottom:8px">
+          <div class="ig"><label>[K⁺]ₒ</label><input type="number" id="t7Ko" value="5" min="0" step="0.1"></div>
+          <div class="ig"><label>[K⁺]ᵢ</label><input type="number" id="t7Ki" value="140" min="0" step="1"></div>
+          <div class="ig"><label>[Na⁺]ₒ</label><input type="number" id="t7Nao" value="145" min="0" step="1"></div>
+          <div class="ig"><label>[Na⁺]ᵢ</label><input type="number" id="t7Nai" value="12" min="0" step="0.5"></div>
+          <div class="ig"><label>[Cl⁻]ₒ</label><input type="number" id="t7Clo" value="110" min="0" step="1"></div>
+          <div class="ig"><label>[Cl⁻]ᵢ</label><input type="number" id="t7Cli" value="4" min="0" step="0.5"></div>
+          <div class="ig"><label>[Ca²⁺]ₒ</label><input type="number" id="t7Cao" value="2" min="0" step="0.1"></div>
+          <div class="ig"><label>[Ca²⁺]ᵢ</label><input type="number" id="t7Cai" value="0.0001" min="0" step="0.00001"></div>
+          <div class="ig"><label>P_K</label><input type="number" id="t7PK" value="1" min="0" step="0.01"></div>
+          <div class="ig"><label>P_Na</label><input type="number" id="t7PNa" value="0.04" min="0" step="0.001"></div>
+          <div class="ig"><label>P_Cl</label><input type="number" id="t7PCl" value="0.45" min="0" step="0.01"></div>
+          <div class="ig"><label>P_Ca</label><input type="number" id="t7PCa" value="0.000001" min="0" step="0.000001"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="t7Calc">▶ Run Sweep</button>
+          <button class="btn btn-secondary" id="t7AddCurve">+ Add Curve</button>
+          <button class="btn btn-ghost" id="t7ClearCurves">Clear Extra</button>
+        </div>
+        <div id="t7ExtraCurves"></div>
+        <div class="status" id="t7Status"></div>
+      </div>
+    </div>
+    <div>
+      <div class="chart-wrap">
+        <div class="chart-head">
+          <span>Vm vs Swept Variable</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-xs" id="t7DlChart">↓ PNG</button>
+            <button class="btn btn-ghost btn-xs" id="t7DlCSV">↓ CSV</button>
+          </div>
+        </div>
+        <div style="height:320px"><canvas id="t7Chart"></canvas></div>
+      </div>
+      <div class="card" style="max-height:220px;overflow-y:auto">
+        <div class="card-title">Data Table <span id="t7DataCount" style="font-weight:400;color:var(--text2)"></span></div>
+        <div id="t7TableWrap"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TAB 8: BATCH ═══ -->
+<section id="t8" class="tab-panel">
+  <details class="desc">
+    <summary>About: Batch Simulator</summary>
+    <div class="desc-body">Run GHK on many parameter sets at once. Use Manual table for a few rows, CSV paste for large datasets, or Auto-grid for two-variable factorial designs with heatmap output. Results are color-coded (blue=hyperpolarized, red=depolarized vs −70 mV).</div>
+  </details>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="radio-group">
+      <label class="radio-option"><input type="radio" name="t8mode" value="manual" checked> Manual table</label>
+      <label class="radio-option"><input type="radio" name="t8mode" value="csv"> CSV paste</label>
+      <label class="radio-option"><input type="radio" name="t8mode" value="grid"> Auto-grid (2-var heatmap)</label>
+    </div>
+  </div>
+
+  <!-- MANUAL -->
+  <div id="t8ManualWrap">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" id="t8RunManual">▶ Run All Rows</button>
+      <button class="btn btn-secondary" id="t8AddRow">+ Row</button>
+      <button class="btn btn-ghost btn-xs" id="t8DlManualCSV">↓ CSV</button>
+      <span style="font-size:11px;color:var(--text2)">Leave any cell blank to use physiological defaults</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="dtable" id="t8ManualTable">
+        <thead>
+          <tr>
+            <th>#</th><th>[K⁺]ₒ</th><th>[K⁺]ᵢ</th><th>[Na⁺]ₒ</th><th>[Na⁺]ᵢ</th>
+            <th>[Cl⁻]ₒ</th><th>[Cl⁻]ᵢ</th><th>[Ca²⁺]ₒ</th><th>[Ca²⁺]ᵢ</th>
+            <th>P_K</th><th>P_Na</th><th>P_Cl</th><th>P_Ca</th><th>T(°C)</th>
+            <th style="color:var(--accent)">Vm (mV)</th>
+          </tr>
+        </thead>
+        <tbody id="t8ManualBody"></tbody>
+      </table>
+    </div>
+    <div class="status" id="t8ManualStatus"></div>
+  </div>
+
+  <!-- CSV -->
+  <div id="t8CsvWrap" style="display:none">
+    <div class="ig" style="margin-bottom:10px">
+      <label>Paste CSV (header required: Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa,Temp)</label>
+      <textarea id="t8CsvInput" rows="8" style="background:var(--inp);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:4px;font-family:monospace;font-size:11px;width:100%;resize:vertical" placeholder="Ko,Ki,Nao,Nai,Clo,Cli,PK,PNa,PCl&#10;5,140,145,12,110,4,1,0.04,0.45&#10;5,140,145,12,110,4,1,0.1,0.45"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="t8ParseCSV">▶ Parse &amp; Run</button>
+      <button class="btn btn-ghost btn-xs" id="t8DlCsvOut">↓ Results CSV</button>
+    </div>
+    <div class="status" id="t8CsvStatus"></div>
+  </div>
+
+  <!-- AUTO GRID -->
+  <div id="t8GridWrap" style="display:none">
+    <div class="grid3" style="margin-bottom:10px">
+      <div class="ig">
+        <label>Variable A</label>
+        <select id="t8GridA">
+          <option value="Ko">[K⁺]ₒ</option><option value="Ko">[K⁺]ₒ</option>
+          <option value="Nao">[Na⁺]ₒ</option><option value="PNa">P_Na</option>
+          <option value="PCl">P_Cl</option><option value="Clo">[Cl⁻]ₒ</option>
+        </select>
+      </div>
+      <div class="ig"><label>A min</label><input type="number" id="t8GAMin" value="1" step="any"></div>
+      <div class="ig"><label>A max</label><input type="number" id="t8GAMax" value="20" step="any"></div>
+      <div class="ig">
+        <label>Variable B</label>
+        <select id="t8GridB">
+          <option value="PNa">P_Na</option><option value="PCl">P_Cl</option>
+          <option value="Nai">[Na⁺]ᵢ</option><option value="Ki">[K⁺]ᵢ</option>
+        </select>
+      </div>
+      <div class="ig"><label>B min</label><input type="number" id="t8GBMin" value="0.01" step="any"></div>
+      <div class="ig"><label>B max</label><input type="number" id="t8GBMax" value="1" step="any"></div>
+      <div class="ig"><label>A steps</label><input type="number" id="t8GASteps" value="15" min="2" max="40"></div>
+      <div class="ig"><label>B steps</label><input type="number" id="t8GBSteps" value="15" min="2" max="40"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="t8RunGrid">▶ Generate &amp; Run</button>
+      <button class="btn btn-ghost btn-xs" id="t8DlGridCSV">↓ CSV</button>
+    </div>
+    <div class="status" id="t8GridStatus"></div>
+  </div>
+
+  <!-- Results area (shared) -->
+  <div id="t8ResultsWrap" style="margin-top:16px;display:none">
+    <hr style="border-color:var(--border);margin-bottom:12px">
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="card">
+        <div class="card-title">Summary Statistics</div>
+        <table class="dtable" id="t8StatsTable">
+          <tbody>
+            <tr><td>Count</td><td id="t8SCount">—</td></tr>
+            <tr><td>Min Vm</td><td id="t8SMin">—</td></tr>
+            <tr><td>Max Vm</td><td id="t8SMax">—</td></tr>
+            <tr><td>Mean Vm</td><td id="t8SMean">—</td></tr>
+            <tr><td>Std Dev</td><td id="t8SStd">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-head">
+          <span id="t8ScatterLabel">Vm scatter</span>
+          <select id="t8ScatterX" style="background:var(--inp);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:11px">
+            <option value="Ko">[K⁺]ₒ</option><option value="Ki">[K⁺]ᵢ</option>
+            <option value="Nao">[Na⁺]ₒ</option><option value="PNa">P_Na</option>
+            <option value="PCl">P_Cl</option>
+          </select>
+        </div>
+        <div style="height:180px"><canvas id="t8Scatter"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Heatmap (grid mode) -->
+    <div id="t8HeatWrap" style="display:none" class="card">
+      <div class="card-title">Heatmap — Vm (mV)</div>
+      <canvas id="t8Heatmap" style="width:100%;image-rendering:pixelated"></canvas>
+      <div id="t8HeatScale" style="margin-top:6px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2)"></div>
+    </div>
+
+    <!-- Results table -->
+    <div style="overflow-x:auto;max-height:300px;overflow-y:auto">
+      <table class="dtable" id="t8ResTable">
+        <thead id="t8ResHead"></thead>
+        <tbody id="t8ResBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════
+   GHK NAMESPACE
+═══════════════════════════════════════ */
+window.GHK = (function(){
+  const R = 8.314, F = 96485;
+
+  function tempK(){
+    return (parseFloat(document.getElementById('gTemp').value) || 37) + 273.15;
+  }
+
+  function RT_F(){  // in mV
+    return R * tempK() / F * 1000;
+  }
+
+  function safe(x){
+    return x <= 0 ? 1e-15 : x;
+  }
+
+  // Nernst potential in mV for ion with charge z
+  function nernst(z, out, inn){
+    return (RT_F() / z) * Math.log(safe(out) / safe(inn));
+  }
+
+  // Bisection root-finder
+  function bisect(fn, lo=-500, hi=500, tol=1e-9, maxIter=10000){
+    let flo = fn(lo), fhi = fn(hi);
+    if(!isFinite(flo) || !isFinite(fhi))
+      return {value:NaN, iterations:0, converged:false};
+
+    // same-sign: scan for bracket
+    if(flo * fhi > 0){
+      const n=2000, step=(hi-lo)/n;
+      let found=false;
+      for(let i=0;i<n;i++){
+        const a=lo+i*step, b=a+step;
+        const fa=fn(a), fb=fn(b);
+        if(isFinite(fa)&&isFinite(fb)&&fa*fb<=0){lo=a;hi=b;flo=fa;fhi=fb;found=true;break}
+      }
+      if(!found) return {value:NaN, iterations:0, converged:false};
+    }
+
+    let mid=lo, iter=0;
+    while(iter<maxIter){
+      mid=(lo+hi)/2;
+      const fmid=fn(mid);
+      if(!isFinite(fmid)) break;
+      if(Math.abs(fmid)<tol||(hi-lo)/2<tol) break;
+      (flo*fmid<=0)?(hi=mid,fhi=fmid):(lo=mid,flo=fmid);
+      iter++;
+    }
+    return {value:mid, iterations:iter, converged:(hi-lo)/2<tol*100};
+  }
+
+  // CSV export
+  function exportCSV(rows, filename='ghk_data.csv'){
+    if(!rows||!rows.length) return;
+    const keys=Object.keys(rows[0]);
+    const lines=[keys.join(','),...rows.map(r=>keys.map(k=>{
+      const v=r[k];
+      return typeof v==='string'&&v.includes(',') ? `"${v}"` : v;
+    }).join(','))];
+    const blob=new Blob([lines.join('\n')],{type:'text/csv'});
+    const a=Object.assign(document.createElement('a'),
+      {href:URL.createObjectURL(blob),download:filename});
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  // Chart PNG download
+  function chartPNG(chartInst, filename='chart.png'){
+    if(!chartInst) return;
+    const a=Object.assign(document.createElement('a'),
+      {href:chartInst.toBase64Image(),download:filename});
+    a.click();
+  }
+
+  // 2-ion GHK voltage (mV)
+  function ghk2(Ko,Ki,Nao,Nai,PK,PNa){
+    const nf=RT_F();
+    const num=PK*Ko+PNa*Nao, den=PK*Ki+PNa*Nai;
+    if(num<=0||den<=0) return NaN;
+    return nf*Math.log(num/den);
+  }
+
+  // 3-ion GHK voltage (mV) — Cl⁻ swapped
+  function ghk3(Ko,Ki,Nao,Nai,Clo,Cli,PK,PNa,PCl){
+    const nf=RT_F();
+    const num=PK*Ko+PNa*Nao+PCl*Cli;
+    const den=PK*Ki+PNa*Nai+PCl*Clo;
+    if(num<=0||den<=0) return NaN;
+    return nf*Math.log(num/den);
+  }
+
+  return {R,F,tempK,RT_F,safe,nernst,bisect,exportCSV,chartPNG,ghk2,ghk3};
+})();
+
+
+/* ═══════════════════════════════════════
+   CHART.JS GLOBAL DEFAULTS (dark theme)
+═══════════════════════════════════════ */
+Chart.defaults.color='#9090a8';
+Chart.defaults.borderColor='rgba(255,255,255,0.08)';
+Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
+Chart.defaults.font.size=11;
+
+const chartInstances={};
+
+function getOrCreateChart(id, config){
+  if(chartInstances[id]){chartInstances[id].destroy();}
+  const ctx=document.getElementById(id);
+  if(!ctx) return null;
+  const ch=new Chart(ctx, config);
+  chartInstances[id]=ch;
+  return ch;
+}
+
+function dlChart(id){
+  const ch=chartInstances[id];
+  if(ch) GHK.chartPNG(ch, id+'.png');
+}
+
+const ION_COLORS={
+  k:'rgba(76,175,80,0.85)',
+  na:'rgba(255,152,0,0.85)',
+  cl:'rgba(171,71,188,0.85)',
+  ca:'rgba(239,83,80,0.85)',
+};
+
+/* ═══════════════════════════════════════
+   UTILITY HELPERS
+═══════════════════════════════════════ */
+function fmt(v,d=2){
+  if(v===null||v===undefined||isNaN(v)||!isFinite(v)) return '—';
+  return v.toFixed(d);
+}
+
+function fmtMv(v){ return fmt(v,2)+' mV'; }
+
+function setEl(id,html){ const e=document.getElementById(id); if(e) e.innerHTML=html; }
+function setTx(id,txt){ const e=document.getElementById(id); if(e) e.textContent=txt; }
+
+function direction(df){
+  if(isNaN(df)||!isFinite(df)) return '—';
+  if(Math.abs(df)<0.1) return '≈ Equilibrium';
+  return df>0 ? '↑ Outward' : '↓ Inward';
+}
+
+function dirClass(df){
+  if(isNaN(df)) return '';
+  return df>0 ? 'style="color:#ff7043"' : 'style="color:#42a5f5"';
+}
+
+function showStatus(id,msg,type='info'){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.textContent=msg;
+  el.className='status '+type;
+}
+
+function clearStatus(id){ const e=document.getElementById(id); if(e){e.textContent='';e.className='status';} }
+
+function validatePos(inputEl, label){
+  const v=parseFloat(inputEl.value);
+  if(isNaN(v)||v<0){
+    inputEl.classList.add('invalid');
+    return {ok:false, msg:`${label} must be ≥ 0`};
+  }
+  inputEl.classList.remove('invalid');
+  return {ok:true, v};
+}
+
+function getVal(id){ return parseFloat(document.getElementById(id).value); }
+
+/* ═══════════════════════════════════════
+   TAB SWITCHING
+═══════════════════════════════════════ */
+document.getElementById('tabBar').addEventListener('click', e=>{
+  const btn=e.target.closest('.tab-btn');
+  if(!btn) return;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(btn.dataset.tab).classList.add('active');
+  saveTabPref(btn.dataset.tab);
+});
+
+function saveTabPref(tab){ try{localStorage.setItem('ghk_tab',tab);}catch(e){} }
+
+/* ═══════════════════════════════════════
+   TEMPERATURE BAR — live RT/F
+═══════════════════════════════════════ */
+document.getElementById('gTemp').addEventListener('input', function(){
+  const nf=GHK.RT_F();
+  document.getElementById('nfVal').textContent=nf.toFixed(2);
+});
+// init
+(function(){ document.getElementById('nfVal').textContent=GHK.RT_F().toFixed(2); })();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB 1 — 2-ION GHK
+═══════════════════════════════════════════════════════════════ */
+(function(){
+  const DEFAULTS={Ko:5,Ki:140,Nao:145,Nai:12,PK:1,PNa:0.04,Vm:-70};
+  const PHYS={Ko:5,Ki:140,Nao:145,Nai:12,PK:1,PNa:0.04};
+
+  function ids(){ return {
+    Ko: document.getElementById('t1Ko'),
+    Ki: document.getElementById('t1Ki'),
+    Nao: document.getElementById('t1Nao'),
+    Nai: document.getElementById('t1Nai'),
+    PK: document.getElementById('t1PK'),
+    PNa: document.getElementById('t1PNa'),
+    Vm: document.getElementById('t1Vm'),
+    solve: document.getElementById('t1Solve'),
+  };}
+
+  // Restore from localStorage
+  function loadLS(){
+    try{
+      const s=localStorage.getItem('ghk_t1');
+      if(s){ const d=JSON.parse(s); const el=ids();
+        Object.keys(d).forEach(k=>{ if(el[k]&&d[k]!==undefined) el[k].value=d[k]; });
+        el.solve.value=d.solve||'Vm';
+      }
+    }catch(e){}
+  }
+
+  function saveLS(){
+    try{
+      const el=ids();
+      const d={Ko:el.Ko.value,Ki:el.Ki.value,Nao:el.Nao.value,Nai:el.Nai.value,
+               PK:el.PK.value,PNa:el.PNa.value,Vm:el.Vm.value,solve:el.solve.value};
+      localStorage.setItem('ghk_t1',JSON.stringify(d));
+    }catch(e){}
+  }
+
+  function updateSolveUI(){
+    const sv=document.getElementById('t1Solve').value;
+    const el=ids();
+    const fields=['Ko','Ki','Nao','Nai','PK','PNa'];
+    fields.forEach(k=>{
+      const inp=el[k];
+      const ig=document.getElementById('ig-t1-'+k);
+      if(k===sv){
+        inp.classList.add('solved'); inp.disabled=true;
+        if(ig) ig.style.opacity='0.5';
+      } else {
+        inp.classList.remove('solved'); inp.disabled=false;
+        if(ig) ig.style.opacity='1';
+      }
+    });
+    // Show/hide target Vm field
+    const vmWrap=document.getElementById('ig-t1-Vm');
+    if(sv==='Vm'){
+      vmWrap.style.display='none';
+    } else {
+      vmWrap.style.display='';
+    }
+    // If solving for ratio, hide PK and PNa solve target
+    if(sv==='ratio'){
+      el.PK.disabled=false; el.PK.classList.remove('solved');
+      el.PNa.disabled=false; el.PNa.classList.remove('solved');
+      document.getElementById('ig-t1-PK').style.opacity='1';
+      document.getElementById('ig-t1-PNa').style.opacity='1';
+    }
+  }
+
+  document.getElementById('t1Solve').addEventListener('change', updateSolveUI);
+
+  function validate(){
+    const el=ids();
+    const sv=el.solve.value;
+    let errs=[];
+    const fields=['Ko','Ki','Nao','Nai','PK','PNa'];
+    const vals={};
+    fields.forEach(k=>{
+      if(k!==sv){
+        const r=validatePos(el[k], k);
+        if(!r.ok) errs.push(r.msg); else vals[k]=r.v;
+      }
+    });
+    if(sv!=='Vm'){
+      const vmv=parseFloat(el.Vm.value);
+      if(isNaN(vmv)) errs.push('Target Vm must be a number');
+      else vals.Vm=vmv;
+    }
+    return {ok:errs.length===0, errs, vals, sv};
+  }
+
+  function buildSubEq(vals, sv, Vm){
+    const Ko=sv==='Ko'?'?' : fmt(vals.Ko,1);
+    const Ki=sv==='Ki'?'?' : fmt(vals.Ki,1);
+    const Nao=sv==='Nao'?'?' : fmt(vals.Nao,1);
+    const Nai=sv==='Nai'?'?' : fmt(vals.Nai,1);
+    const PK=sv==='PK'?'?' : fmt(vals.PK,4);
+    const PNa=sv==='PNa'?'?' : fmt(vals.PNa,4);
+    const nf=GHK.RT_F();
+    let vmStr=sv==='Vm'?'Vm':fmt(Vm,2);
+    return `${vmStr} = ${nf.toFixed(2)} · ln[ (${PK}·${Ko} + ${PNa}·${Nao}) / (${PK}·${Ki} + ${PNa}·${Nai}) ]`;
+  }
+
+  function calc(){
+    clearStatus('t1Status');
+    const {ok,errs,vals,sv}=validate();
+    if(!ok){ showStatus('t1Status',errs.join('; '),'err'); return; }
+
+    const nf=GHK.RT_F();
+    let Vm=NaN, resultLabel='mV (membrane potential)', ratioText='', iterations=null, converged=true;
+
+    if(sv==='Vm'){
+      Vm=GHK.ghk2(vals.Ko,vals.Ki,vals.Nao,vals.Nai,vals.PK,vals.PNa);
+      if(!isFinite(Vm)){
+        showStatus('t1Status','Could not compute Vm — check that concentrations and permeabilities are positive.','err'); return;
+      }
+    } else if(sv==='Ko'){
+      const targetVm=vals.Vm;
+      const res=GHK.bisect(Ko=>GHK.ghk2(Ko,vals.Ki,vals.Nao,vals.Nai,vals.PK,vals.PNa)-targetVm, 0.001, 1000);
+      if(!res.converged||isNaN(res.value)){showStatus('t1Status','Bisection did not converge for [K⁺]ₒ. Try different target Vm.','err');return;}
+      Vm=targetVm; vals.Ko=res.value; iterations=res.iterations;
+      document.getElementById('t1Ko').value=res.value.toFixed(3);
+      resultLabel=`mM  ([K⁺]ₒ)`;
+    } else if(sv==='Ki'){
+      const targetVm=vals.Vm;
+      const res=GHK.bisect(Ki=>GHK.ghk2(vals.Ko,Ki,vals.Nao,vals.Nai,vals.PK,vals.PNa)-targetVm, 0.001, 1000);
+      if(!res.converged||isNaN(res.value)){showStatus('t1Status','Bisection did not converge for [K⁺]ᵢ.','err');return;}
+      Vm=targetVm; vals.Ki=res.value; iterations=res.iterations;
+      document.getElementById('t1Ki').value=res.value.toFixed(3);
+      resultLabel=`mM  ([K⁺]ᵢ)`;
+    } else if(sv==='Nao'){
+      const targetVm=vals.Vm;
+      const res=GHK.bisect(Nao=>GHK.ghk2(vals.Ko,vals.Ki,Nao,vals.Nai,vals.PK,vals.PNa)-targetVm, 0.001, 1000);
+      if(!res.converged||isNaN(res.value)){showStatus('t1Status','Bisection did not converge for [Na⁺]ₒ.','err');return;}
+      Vm=targetVm; vals.Nao=res.value; iterations=res.iterations;
+      document.getElementById('t1Nao').value=res.value.toFixed(3);
+      resultLabel=`mM  ([Na⁺]ₒ)`;
+    } else if(sv==='Nai'){
+      const targetVm=vals.Vm;
+      const res=GHK.bisect(Nai=>GHK.ghk2(vals.Ko,vals.Ki,vals.Nao,Nai,vals.PK,vals.PNa)-targetVm, 0.001, 1000);
+      if(!res.converged||isNaN(res.value)){showStatus('t1Status','Bisection did not converge for [Na⁺]ᵢ.','err');return;}
+      Vm=targetVm; vals.Nai=res.value; iterations=res.iterations;
+      document.getElementById('t1Nai').value=res.value.toFixed(3);
+      resultLabel=`mM  ([Na⁺]ᵢ)`;
+    } else if(sv==='PK'){
+      const targetVm=vals.Vm;
+      const res=GHK.bisect(PK=>GHK.ghk2(vals.Ko,vals.Ki,vals.Nao,vals.Nai,PK,vals.PNa)-targetVm, 1e-9, 1000);
+      if(!res.converged||isNaN(res.value)){showStatus('t1Status','Bisection did not converge for P_K.','err');return;}
+      Vm=targetVm; vals.PK=res.value; iterations=res.iterations;
+      document.getElementById('t1PK').value=res.value.toFixed(6);
+      resultLabel='P_K (permeability)';
+    } else if(sv==='PNa'){
+      const targetVm=vals.Vm;
+      const res=GHK.bisect(PNa=>GHK.ghk2(vals.Ko,vals.Ki,vals.Nao,vals.Nai,vals.PK,PNa)-targetVm, 1e-9, 1000);
+      if(!res.converged||isNaN(res.value)){showStatus('t1Status','Bisection did not converge for P_Na.','err');return;}
+      Vm=targetVm; vals.PNa=res.value; iterations=res.iterations;
+      document.getElementById('t1PNa').value=res.value.toFixed(6);
+      resultLabel='P_Na (permeability)';
+    } else if(sv==='ratio'){
+      Vm=GHK.ghk2(vals.Ko,vals.Ki,vals.Nao,vals.Nai,vals.PK,vals.PNa);
+      if(!isFinite(Vm)){showStatus('t1Status','Could not compute Vm for ratio.','err');return;}
+      const u=Vm/nf; // FVm/RT
+      const expU=Math.exp(u);
+      const denom=vals.Ki*expU-vals.Ko;
+      let ratio=NaN;
+      if(Math.abs(denom)>1e-12) ratio=(vals.Nao-vals.Nai*expU)/denom;
+      ratioText=`P_K/P_Na = ${isFinite(ratio)?ratio.toFixed(4):'—'}`;
+      resultLabel='(compute Vm first, then show ratio)';
+    }
+
+    // Update result display
+    const svIsConc=['Ko','Ki','Nao','Nai'].includes(sv);
+    const svIsPerm=['PK','PNa'].includes(sv);
+    let displayVal;
+    if(sv==='Ko') displayVal=vals.Ko;
+    else if(sv==='Ki') displayVal=vals.Ki;
+    else if(sv==='Nao') displayVal=vals.Nao;
+    else if(sv==='Nai') displayVal=vals.Nai;
+    else if(sv==='PK') displayVal=vals.PK;
+    else if(sv==='PNa') displayVal=vals.PNa;
+    else displayVal=Vm;
+
+    document.getElementById('t1VmOut').textContent=
+      isFinite(displayVal)?
+        (sv==='Vm'||sv==='ratio'?fmt(Vm,3):
+          svIsConc?fmt(displayVal,3)+' mM':
+          svIsPerm?displayVal.toExponential(4):
+          fmt(displayVal,4))
+      :'—';
+    document.getElementById('t1VmLabel').textContent=
+      sv==='Vm'?'mV (membrane potential)':
+      svIsConc?('mM ('+sv+')'):
+      svIsPerm?('P value ('+sv+')'):
+      'mV (Vm) — then ratio below';
+    document.getElementById('t1RatioOut').textContent=ratioText;
+
+    // Nernst potentials
+    const Ek=GHK.nernst(1,vals.Ko,vals.Ki);
+    const Ena=GHK.nernst(1,vals.Nao,vals.Nai);
+    const VmForDF=isFinite(Vm)?Vm:(sv==='ratio'?Vm:vals.Vm);
+    const DFk=VmForDF-Ek, DFna=VmForDF-Ena;
+
+    setTx('t1Ek',fmtMv(Ek));
+    setTx('t1Ena',fmtMv(Ena));
+    setEl('t1DFk',`<span ${dirClass(DFk)}>${fmt(DFk,2)} mV</span>`);
+    setEl('t1DFna',`<span ${dirClass(DFna)}>${fmt(DFna,2)} mV</span>`);
+    setEl('t1Dirk',`<span ${dirClass(DFk)}>${direction(DFk)}</span>`);
+    setEl('t1Dirna',`<span ${dirClass(DFna)}>${direction(DFna)}</span>`);
+
+    // Substituted equation
+    document.getElementById('t1SubEq').textContent=buildSubEq(vals,sv,Vm);
+
+    // Bar chart
+    const numK=vals.PK*vals.Ko, numNa=vals.PNa*vals.Nao;
+    const denK=vals.PK*vals.Ki, denNa=vals.PNa*vals.Nai;
+    drawBarChart1(numK,numNa,denK,denNa);
+
+    // Status
+    if(iterations!==null){
+      showStatus('t1Status',`Converged in ${iterations} bisection iterations.`,'ok');
+    } else {
+      showStatus('t1Status',`Vm = ${fmt(Vm,3)} mV  |  E_K = ${fmt(Ek,2)} mV  |  E_Na = ${fmt(Ena,2)} mV`,'ok');
+    }
+    saveLS();
+  }
+
+  function drawBarChart1(numK,numNa,denK,denNa){
+    const ch=getOrCreateChart('t1Chart',{
+      type:'bar',
+      data:{
+        labels:['Numerator','Denominator'],
+        datasets:[
+          {label:'K⁺ contribution',data:[numK,denK],
+           backgroundColor:ION_COLORS.k,borderRadius:3},
+          {label:'Na⁺ contribution',data:[numNa,denNa],
+           backgroundColor:ION_COLORS.na,borderRadius:3},
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'bottom',labels:{boxWidth:12,padding:12}},
+          title:{display:true,text:'Permeability × Concentration Contributions',color:'#9090a8',font:{size:11}},
+          tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(4)}`}}
+        },
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#9090a8'}},
+          y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#9090a8'},
+             title:{display:true,text:'P × [ion] (mM)',color:'#9090a8'}}
+        }
+      }
+    });
+    return ch;
+  }
+
+  // Preset
+  document.getElementById('t1Preset').addEventListener('click',()=>{
+    const el=ids(); Object.assign(el,{});
+    document.getElementById('t1Ko').value=PHYS.Ko;
+    document.getElementById('t1Ki').value=PHYS.Ki;
+    document.getElementById('t1Nao').value=PHYS.Nao;
+    document.getElementById('t1Nai').value=PHYS.Nai;
+    document.getElementById('t1PK').value=PHYS.PK;
+    document.getElementById('t1PNa').value=PHYS.PNa;
+    document.getElementById('t1Solve').value='Vm';
+    updateSolveUI(); calc();
+  });
+
+  // Reset
+  document.getElementById('t1Reset').addEventListener('click',()=>{
+    document.getElementById('t1Ko').value=DEFAULTS.Ko;
+    document.getElementById('t1Ki').value=DEFAULTS.Ki;
+    document.getElementById('t1Nao').value=DEFAULTS.Nao;
+    document.getElementById('t1Nai').value=DEFAULTS.Nai;
+    document.getElementById('t1PK').value=DEFAULTS.PK;
+    document.getElementById('t1PNa').value=DEFAULTS.PNa;
+    document.getElementById('t1Vm').value=DEFAULTS.Vm;
+    document.getElementById('t1Solve').value='Vm';
+    updateSolveUI(); clearStatus('t1Status');
+    document.getElementById('t1VmOut').textContent='—';
+    document.getElementById('t1SubEq').textContent='—';
+    setTx('t1Ek','—'); setTx('t1Ena','—');
+    setTx('t1DFk','—'); setTx('t1DFna','—');
+    setTx('t1Dirk','—'); setTx('t1Dirna','—');
+  });
+
+  document.getElementById('t1Calc').addEventListener('click', calc);
+  document.getElementById('t1DlChart').addEventListener('click',()=>dlChart('t1Chart'));
+
+  // Enter key
+  document.getElementById('t1').addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&e.target.tagName==='INPUT') calc();
+  });
+
+  // Init
+  loadLS(); updateSolveUI(); calc();
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB 2 — 3-ION GHK
+═══════════════════════════════════════════════════════════════ */
+(function(){
+  const DEFAULTS={Ko:5,Ki:140,Nao:145,Nai:12,Clo:110,Cli:4,PK:1,PNa:0.04,PCl:0.45,Vm:-70};
+  const PHYS={Ko:5,Ki:140,Nao:145,Nai:12,Clo:110,Cli:4,PK:1,PNa:0.04,PCl:0.45};
+
+  function ids(){ return {
+    Ko:document.getElementById('t2Ko'),Ki:document.getElementById('t2Ki'),
+    Nao:document.getElementById('t2Nao'),Nai:document.getElementById('t2Nai'),
+    Clo:document.getElementById('t2Clo'),Cli:document.getElementById('t2Cli'),
+    PK:document.getElementById('t2PK'),PNa:document.getElementById('t2PNa'),PCl:document.getElementById('t2PCl'),
+    Vm:document.getElementById('t2Vm'),solve:document.getElementById('t2Solve'),
+  };}
+
+  const ALL_FIELDS=['Ko','Ki','Nao','Nai','Clo','Cli','PK','PNa','PCl'];
+
+  function loadLS(){
+    try{
+      const s=localStorage.getItem('ghk_t2');
+      if(s){ const d=JSON.parse(s); const el=ids();
+        Object.keys(d).forEach(k=>{if(el[k]&&d[k]!==undefined)el[k].value=d[k];});
+        el.solve.value=d.solve||'Vm';
+      }
+    }catch(e){}
+  }
+
+  function saveLS(){
+    try{
+      const el=ids();
+      const d={}; ALL_FIELDS.forEach(k=>d[k]=el[k].value);
+      d.Vm=el.Vm.value; d.solve=el.solve.value;
+      localStorage.setItem('ghk_t2',JSON.stringify(d));
+    }catch(e){}
+  }
+
+  function updateSolveUI(){
+    const sv=document.getElementById('t2Solve').value;
+    const el=ids();
+    ALL_FIELDS.forEach(k=>{
+      const inp=el[k];
+      const ig=document.getElementById('ig-t2-'+k);
+      // ratio options don't directly gray a field
+      const isRatio=['PKNa','PKCl','PNaCl'].includes(sv);
+      if(k===sv && !isRatio){
+        inp.classList.add('solved'); inp.disabled=true;
+        if(ig) ig.style.opacity='0.5';
+      } else {
+        inp.classList.remove('solved'); inp.disabled=false;
+        if(ig) ig.style.opacity='1';
+      }
+    });
+    const vmWrap=document.getElementById('ig-t2-Vm');
+    vmWrap.style.display=(sv==='Vm')?'none':'';
+  }
+
+  document.getElementById('t2Solve').addEventListener('change',updateSolveUI);
+
+  function getVals(sv){
+    const el=ids(); const vals={};
+    let errs=[];
+    ALL_FIELDS.forEach(k=>{
+      const isRatio=['PKNa','PKCl','PNaCl'].includes(sv);
+      if(k!==sv||isRatio){
+        const r=validatePos(el[k],k);
+        if(!r.ok) errs.push(r.msg); else vals[k]=r.v;
+      }
+    });
+    if(sv!=='Vm'){
+      const v=parseFloat(el.Vm.value);
+      if(isNaN(v)) errs.push('Target Vm required');
+      else vals.Vm=v;
+    }
+    return {ok:errs.length===0, errs, vals};
+  }
+
+  function ghk3v(v){ return GHK.ghk3(v.Ko,v.Ki,v.Nao,v.Nai,v.Clo,v.Cli,v.PK,v.PNa,v.PCl); }
+
+  function calc(){
+    clearStatus('t2Status');
+    const sv=document.getElementById('t2Solve').value;
+    const {ok,errs,vals}=getVals(sv);
+    if(!ok){showStatus('t2Status',errs.join('; '),'err');return;}
+
+    let Vm=NaN, displayVal=null, displayLabel='mV (membrane potential)';
+    let iterations=null;
+
+    const isRatio=['PKNa','PKCl','PNaCl'].includes(sv);
+
+    if(sv==='Vm'||isRatio){
+      Vm=ghk3v(vals);
+      if(!isFinite(Vm)){showStatus('t2Status','Invalid result — check inputs.','err');return;}
+    } else if(sv==='Ko'){
+      const res=GHK.bisect(Ko=>GHK.ghk3(Ko,vals.Ki,vals.Nao,vals.Nai,vals.Clo,vals.Cli,vals.PK,vals.PNa,vals.PCl)-vals.Vm,0.001,1000);
+      if(!res.converged){showStatus('t2Status','Bisection did not converge.','err');return;}
+      vals.Ko=res.value; document.getElementById('t2Ko').value=res.value.toFixed(3);
+      Vm=vals.Vm; displayVal=res.value; displayLabel='mM ([K⁺]ₒ)'; iterations=res.iterations;
+    } else if(sv==='Ki'){
+      const res=GHK.bisect(Ki=>GHK.ghk3(vals.Ko,Ki,vals.Nao,vals.Nai,vals.Clo,vals.Cli,vals.PK,vals.PNa,vals.PCl)-vals.Vm,0.001,1000);
+      if(!res.converged){showStatus('t2Status','Did not converge for [K⁺]ᵢ.','err');return;}
+      vals.Ki=res.value; document.getElementById('t2Ki').value=res.value.toFixed(3);
+      Vm=vals.Vm; displayVal=res.value; displayLabel='mM ([K⁺]ᵢ)'; iterations=res.iterations;
+    } else if(sv==='Nao'){
+      const res=GHK.bisect(Nao=>GHK.ghk3(vals.Ko,vals.Ki,Nao,vals.Nai,vals.Clo,vals.Cli,vals.PK,vals.PNa,vals.PCl)-vals.Vm,0.001,1000);
+      if(!res.converged){showStatus('t2Status','Did not converge.','err');return;}
+      vals.Nao=res.value; document.getElementById('t2Nao').value=res.value.toFixed(3);
+      Vm=vals.Vm; displayVal=res.value; displayLabel='mM ([Na⁺]ₒ)'; iterations=res.iterations;
+    } else if(sv==='Nai'){
+      const res=GHK.bisect(Nai=>GHK.ghk3(vals.Ko,vals.Ki,vals.Nao,Nai,vals.Clo,vals.Cli,vals.PK,vals.PNa,vals.PCl)-vals.Vm,0.001,1000);
+      if(!res.converged){showStatus('t2Status','Did not converge.','err');return;}
+      vals.Nai=res.value; document.getElementById('t2Nai').value=res.value.toFixed(3);
+      Vm=vals.Vm; displayVal=res.value; displayLabel='mM ([Na⁺]ᵢ)'; iterations=res.iterations;
+    } else if(sv==='Clo'){
+      const res=GHK.bisect(Clo=>GHK.ghk3(vals.Ko,vals.Ki,vals.Nao,vals.Nai,Clo,vals.Cli,vals.PK,vals.PNa,vals.PCl)-vals.Vm,0.001,1000);
+      if(!res.converged){showStatus('t2Status','Did not converge for [Cl⁻]ₒ.','err');return;}
+      vals.Clo=res.value; document.getElementById('t2Clo').value=res.value.toFixed(3);
+      Vm=vals.Vm; displayVal=res.value; displayLabel='mM ([Cl⁻]ₒ)'; iterations=res.iterations;
+    } else if(sv==='Cli'){
+      const res=GHK.bisect(Cli=>GHK.ghk3(vals.Ko,vals.Ki,vals.Nao,vals.Nai,vals.Clo,Cli,vals.PK,vals.PNa,vals.PCl)-vals.Vm,0.001,1000);
+      if(!res.converged){showStatus('t2Status','Did not converge for [Cl⁻]ᵢ.','err');return;}
+      vals.Cli=res.value; document.getElementById('t2Cli').value=res.value.toFixed(3);
+      Vm=vals.Vm; displayVal=res.value; displayLabel='mM ([Cl⁻]ᵢ)'; iterations=res.iterations;
+    } else if(sv==='PK'){
+      const res=GHK.bisect(PK=>GHK.ghk3(vals.Ko,vals.Ki,vals.Nao,vals.Nai,vals.Clo,vals.Cli,PK,vals.PNa,vals.PCl)-vals.Vm,1e-9,1000);
+      if(!res.converged){showStatus('t2Status','Did not converge for P_K.','err');return;}
+      vals.PK=res.value; document.getElementById('t2PK').value=res.value.toFixed(6);
+      Vm=vals.Vm; displayVal=res.value; displayLabel='P_K'; iterations=res.iterations;
+    } else if(sv==='PNa'){
+      const res=GHK.bisect(PNa=>GHK.ghk3(vals.Ko,vals.Ki,vals.Nao,vals.Nai,vals.Clo,vals.Cli,vals.PK,PNa,vals.PCl)-vals.Vm,1e-9,1000);
+      if(!res.converged){showStatus('t2Status','Did not converge for P_Na.','err');return;}
+      vals.PNa=res.value; document.getElementById('t2PNa').value=res.value.toFixed(6);
+      Vm=vals.Vm; displayVal=res.value; displayLabel='P_Na'; iterations=res.iterations;
+    } else if(sv==='PCl'){
+      const res=GHK.bisect(PCl=>GHK.ghk3(vals.Ko,vals.Ki,vals.Nao,vals.Nai,vals.Clo,vals.Cli,vals.PK,vals.PNa,PCl)-vals.Vm,1e-9,1000);
+      if(!res.converged){showStatus('t2Status','Did not converge for P_Cl.','err');return;}
+      vals.PCl=res.value; document.getElementById('t2PCl').value=res.value.toFixed(6);
+      Vm=vals.Vm; displayVal=res.value; displayLabel='P_Cl'; iterations=res.iterations;
+    }
+
+    // Display Vm or solved value
+    let shown=displayVal!==null?displayVal:Vm;
+    document.getElementById('t2VmOut').textContent=isFinite(shown)?
+      (['Ko','Ki','Nao','Nai','Clo','Cli'].some(k=>displayLabel.includes(k[0]))?
+        fmt(shown,3):isRatio?fmt(Vm,3):fmt(shown,3))
+    :'—';
+    document.getElementById('t2VmOut').textContent=isFinite(Vm)?fmt(Vm,3):'—';
+    if(displayVal!==null) document.getElementById('t2VmOut').textContent=fmt(displayVal,4)+' (→ Vm='+fmt(Vm,3)+')';
+    document.getElementById('t2VmLabel').textContent=displayLabel;
+
+    // Ratio
+    let ratioTxt='';
+    if(isRatio){
+      const nf=GHK.RT_F(); const u=Vm/nf; const expU=Math.exp(u);
+      const numK=vals.PK*vals.Ko, denK=vals.PK*vals.Ki;
+      const numNa=vals.PNa*vals.Nao, denNa=vals.PNa*vals.Nai;
+      const numCl=vals.PCl*vals.Cli, denCl=vals.PCl*vals.Clo;
+      if(sv==='PKNa') ratioTxt=`P_K/P_Na = ${fmt(vals.PK/vals.PNa,4)}`;
+      if(sv==='PKCl') ratioTxt=`P_K/P_Cl = ${fmt(vals.PK/vals.PCl,4)}`;
+      if(sv==='PNaCl') ratioTxt=`P_Na/P_Cl = ${fmt(vals.PNa/vals.PCl,4)}`;
+    }
+    document.getElementById('t2RatioOut').textContent=ratioTxt;
+
+    // Nernst
+    const Ek=GHK.nernst(1,vals.Ko,vals.Ki);
+    const Ena=GHK.nernst(1,vals.Nao,vals.Nai);
+    const Ecl=GHK.nernst(-1,vals.Clo,vals.Cli);
+    const DFk=Vm-Ek, DFna=Vm-Ena, DFcl=Vm-Ecl;
+
+    const numK=vals.PK*vals.Ko, numNa=vals.PNa*vals.Nao, numCl=vals.PCl*vals.Cli;
+    const denK=vals.PK*vals.Ki, denNa=vals.PNa*vals.Nai, denCl=vals.PCl*vals.Clo;
+
+    setTx('t2Ek',fmtMv(Ek)); setTx('t2Ena',fmtMv(Ena)); setTx('t2Ecl',fmtMv(Ecl));
+    setEl('t2DFk',`<span ${dirClass(DFk)}>${fmt(DFk,2)} mV</span>`);
+    setEl('t2DFna',`<span ${dirClass(DFna)}>${fmt(DFna,2)} mV</span>`);
+    setEl('t2DFcl',`<span ${dirClass(DFcl)}>${fmt(DFcl,2)} mV</span>`);
+    setEl('t2Dirk',`<span ${dirClass(DFk)}>${direction(DFk)}</span>`);
+    setEl('t2Dirna',`<span ${dirClass(DFna)}>${direction(DFna)}</span>`);
+    setEl('t2Dircl',`<span ${dirClass(DFcl)}>${direction(DFcl)}</span>`);
+    setTx('t2Wk',`${fmt(numK,3)} / ${fmt(denK,3)}`);
+    setTx('t2Wna',`${fmt(numNa,3)} / ${fmt(denNa,3)}`);
+    setTx('t2Wcl',`${fmt(numCl,3)} / ${fmt(denCl,3)}`);
+
+    // Substituted equation
+    document.getElementById('t2SubEq').textContent=
+      `Vm = ${GHK.RT_F().toFixed(2)} · ln[ (${fmt(vals.PK,3)}·${fmt(vals.Ko,1)} + ${fmt(vals.PNa,4)}·${fmt(vals.Nao,1)} + ${fmt(vals.PCl,3)}·${fmt(vals.Cli,1)}) /\n`+
+      `                                    (${fmt(vals.PK,3)}·${fmt(vals.Ki,1)} + ${fmt(vals.PNa,4)}·${fmt(vals.Nai,1)} + ${fmt(vals.PCl,3)}·${fmt(vals.Clo,1)}) ]\n`+
+      `     = ${fmt(Vm,3)} mV`;
+
+    // Pie charts
+    const pieColors=[ION_COLORS.k, ION_COLORS.na, ION_COLORS.cl];
+    const piePieOpts=(title)=>({
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{boxWidth:10,padding:8,font:{size:10}}},
+        title:{display:true,text:title,color:'#9090a8',font:{size:10}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed.toFixed(3)} (${(ctx.parsed/(numK+numNa+numCl)*100).toFixed(1)}%)`}}
+      }
+    });
+
+    getOrCreateChart('t2Pie1',{type:'pie',
+      data:{labels:['K⁺','Na⁺','Cl⁻ (swapped)'],
+        datasets:[{data:[numK,numNa,numCl],backgroundColor:pieColors,borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},
+      options:piePieOpts('Numerator')
+    });
+
+    getOrCreateChart('t2Pie2',{type:'pie',
+      data:{labels:['K⁺','Na⁺','Cl⁻ (swapped)'],
+        datasets:[{data:[denK,denNa,denCl],backgroundColor:pieColors,borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},
+      options:piePieOpts('Denominator')
+    });
+
+    if(iterations!==null){
+      showStatus('t2Status',`Converged in ${iterations} iterations. Vm = ${fmt(Vm,3)} mV.`,'ok');
+    } else {
+      showStatus('t2Status',`Vm = ${fmt(Vm,3)} mV | E_K = ${fmt(Ek,2)} | E_Na = ${fmt(Ena,2)} | E_Cl = ${fmt(Ecl,2)} mV`,'ok');
+    }
+    saveLS();
+  }
+
+  document.getElementById('t2Preset').addEventListener('click',()=>{
+    Object.keys(PHYS).forEach(k=>{ const e=document.getElementById('t2'+k); if(e) e.value=PHYS[k]; });
+    document.getElementById('t2Solve').value='Vm';
+    updateSolveUI(); calc();
+  });
+
+  document.getElementById('t2Reset').addEventListener('click',()=>{
+    Object.keys(DEFAULTS).forEach(k=>{ const e=document.getElementById('t2'+k); if(e) e.value=DEFAULTS[k]; });
+    document.getElementById('t2Solve').value='Vm';
+    updateSolveUI(); clearStatus('t2Status');
+    ['t2VmOut','t2Ek','t2Ena','t2Ecl','t2DFk','t2DFna','t2DFcl',
+     't2Dirk','t2Dirna','t2Dircl','t2Wk','t2Wna','t2Wcl','t2SubEq','t2RatioOut']
+    .forEach(id=>{ const e=document.getElementById(id); if(e) e.textContent='—'; });
+  });
+
+  document.getElementById('t2Calc').addEventListener('click',calc);
+  document.getElementById('t2DlPie1').addEventListener('click',()=>dlChart('t2Pie1'));
+  document.getElementById('t2DlPie2').addEventListener('click',()=>dlChart('t2Pie2'));
+
+  document.getElementById('t2').addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&e.target.tagName==='INPUT') calc();
+  });
+
+  loadLS(); updateSolveUI(); calc();
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   GHK NAMESPACE ADDITIONS — ionCurrent, ghk4Solve
+═══════════════════════════════════════════════════════════════ */
+GHK.ionCurrent = function(P, z, Vm_mV, ci, co){
+  const RT = this.R * this.tempK();
+  const Vm = Vm_mV / 1000;
+  const eps = 1e-12;
+  if(Math.abs(Vm) < 1e-9) return P * z * this.F * (ci - co);
+  const u = z * this.F * Vm / RT;
+  const expU = Math.exp(-u);
+  const denom = 1 - expU;
+  if(Math.abs(denom) < eps) return P * z * this.F * (ci - co);
+  return P * z * z * this.F * this.F / RT * Vm * (ci - co * expU) / denom;
+};
+
+GHK.ghk4TotalJ = function(Vm_mV, Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
+  return this.ionCurrent(PK,  1, Vm_mV, Ki,  Ko)
+       + this.ionCurrent(PNa, 1, Vm_mV, Nai, Nao)
+       + this.ionCurrent(PCl,-1, Vm_mV, Cli, Clo)
+       + this.ionCurrent(PCa, 2, Vm_mV, Cai, Cao);
+};
+
+GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
+  const f = Vm => this.ghk4TotalJ(Vm,Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa);
+  return this.bisect(f, -500, 500);
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB 3 — 4-ION GHK
+═══════════════════════════════════════════════════════════════ */
+(function(){
+  const PHYS={Ko:5,Ki:140,Nao:145,Nai:12,Clo:110,Cli:4,Cao:2,Cai:0.0001,PK:1,PNa:0.04,PCl:0.45,PCa:0.000001};
+  const DEFS=Object.assign({},PHYS,{Vm:-70});
+  const CONC_FIELDS=['Ko','Ki','Nao','Nai','Clo','Cli','Cao','Cai'];
+  const PERM_FIELDS=['PK','PNa','PCl','PCa'];
+  const ALL_FIELDS=[...CONC_FIELDS,...PERM_FIELDS];
+
+  function caOn(){ return document.getElementById('t3CaOn').checked; }
+
+  function updateCaUI(){
+    const on=caOn();
+    document.querySelectorAll('.t3-ca-row').forEach(el=>{
+      el.style.display=on?'':'none';
+    });
+    document.getElementById('t3Mode').textContent=on?'(4-ion — implicit bisection)':'(3-ion — analytical)';
+    // If solving for Ca field and Ca is off, reset
+    const sv=document.getElementById('t3Solve').value;
+    if(!on && ['Cao','Cai','PCa'].includes(sv)) document.getElementById('t3Solve').value='Vm';
+    updateSolveUI();
+  }
+
+  function updateSolveUI(){
+    const sv=document.getElementById('t3Solve').value;
+    const on=caOn();
+    ALL_FIELDS.forEach(k=>{
+      const inp=document.getElementById('t3'+k);
+      const ig=document.getElementById('ig-t3-'+k);
+      if(!inp||!ig) return;
+      if(k===sv){inp.classList.add('solved');inp.disabled=true;ig.style.opacity='0.5';}
+      else{inp.classList.remove('solved');inp.disabled=false;ig.style.opacity='1';}
+    });
+    document.getElementById('ig-t3-Vm').style.display=(sv==='Vm')?'none':'';
+  }
+
+  document.getElementById('t3CaOn').addEventListener('change', updateCaUI);
+  document.getElementById('t3Solve').addEventListener('change', updateSolveUI);
+
+  function getV(k){ return parseFloat(document.getElementById('t3'+k).value); }
+
+  function calcVm(v, sv){
+    const on=caOn();
+    if(sv==='Vm'){
+      if(!on) return {value: GHK.ghk3(v.Ko,v.Ki,v.Nao,v.Nai,v.Clo,v.Cli,v.PK,v.PNa,v.PCl), converged:true, iterations:0};
+      return GHK.ghk4Solve(v.Ko,v.Ki,v.Nao,v.Nai,v.Clo,v.Cli,v.Cao,v.Cai,v.PK,v.PNa,v.PCl,v.PCa);
+    }
+    // Solve for unknown by bisecting GHK on that variable
+    const target=v.Vm;
+    const lo_hi={Ko:[0.001,1000],Ki:[0.001,1000],Nao:[0.001,1000],Nai:[0.001,1000],
+                 Clo:[0.001,1000],Cli:[0.001,1000],Cao:[0.00001,100],Cai:[0.000001,10],
+                 PK:[1e-9,1000],PNa:[1e-9,1000],PCl:[1e-9,1000],PCa:[1e-12,1000]};
+    const [lo,hi]=lo_hi[sv]||[0.001,1000];
+    const f = x => {
+      const p=Object.assign({},v); p[sv]=x;
+      if(!on) return GHK.ghk3(p.Ko,p.Ki,p.Nao,p.Nai,p.Clo,p.Cli,p.PK,p.PNa,p.PCl) - target;
+      const res=GHK.ghk4Solve(p.Ko,p.Ki,p.Nao,p.Nai,p.Clo,p.Cli,p.Cao,p.Cai,p.PK,p.PNa,p.PCl,p.PCa);
+      return (res.value||0) - target;
+    };
+    const res=GHK.bisect(f,lo,hi);
+    return res;
+  }
+
+  function calc(){
+    clearStatus('t3Status');
+    const sv=document.getElementById('t3Solve').value;
+    const on=caOn();
+    const v={Vm:getV('Vm')};
+    let errs=[];
+    ALL_FIELDS.forEach(k=>{
+      if(!on && ['Cao','Cai','PCa'].includes(k)){v[k]=PHYS[k];return;}
+      if(k===sv) return;
+      const val=getV(k);
+      if(isNaN(val)||val<0){errs.push(k+' must be ≥ 0');}
+      else v[k]=val;
+    });
+    if(errs.length){showStatus('t3Status',errs.join('; '),'err');return;}
+
+    const res=calcVm(v,sv);
+    let Vm=null;
+    if(sv==='Vm'){
+      if(!isFinite(res.value)){showStatus('t3Status','Could not compute Vm — check inputs.','err');return;}
+      Vm=res.value;
+    } else {
+      if(!res.converged||isNaN(res.value)){showStatus('t3Status','Bisection did not converge for '+sv,'err');return;}
+      v[sv]=res.value;
+      document.getElementById('t3'+sv).value=res.value.toPrecision(6);
+      // Recompute Vm with solved value
+      const r2=calcVm(v,'Vm');
+      Vm=r2.value;
+    }
+
+    document.getElementById('t3VmOut').textContent=fmt(Vm,3);
+    document.getElementById('t3IterOut').textContent=
+      res.iterations>0?`Converged in ${res.iterations} iterations`:'';
+
+    // Nernst
+    const Ek=GHK.nernst(1,v.Ko,v.Ki);
+    const Ena=GHK.nernst(1,v.Nao,v.Nai);
+    const Ecl=GHK.nernst(-1,v.Clo,v.Cli);
+    const Eca=GHK.nernst(2,v.Cao,v.Cai);
+    const pairs=[['Ek',Ek,'DFk','Dirk'],['Ena',Ena,'DFna','Dirna'],
+                 ['Ecl',Ecl,'DFcl','Dircl'],['Eca',Eca,'DFca','Dirca']];
+    pairs.forEach(([eid,E,dfid,dirid])=>{
+      const df=Vm-E;
+      setTx('t3'+eid,fmtMv(E));
+      setEl('t3'+dfid,`<span ${dirClass(df)}>${fmt(df,2)} mV</span>`);
+      setEl('t3'+dirid,`<span ${dirClass(df)}>${direction(df)}</span>`);
+    });
+
+    // Warn if Ca dominates
+    const Jk=Math.abs(GHK.ionCurrent(v.PK,1,Vm,v.Ki,v.Ko));
+    const Jna=Math.abs(GHK.ionCurrent(v.PNa,1,Vm,v.Nai,v.Nao));
+    const Jca=Math.abs(GHK.ionCurrent(v.PCa,2,Vm,v.Cai,v.Cao));
+    const wb=document.getElementById('t3WarnBox');
+    if(on && Jca > (Jk+Jna)*0.5){
+      wb.textContent='⚠ Ca²⁺ current is unusually large — verify P_Ca and concentrations.';
+      wb.style.display='';
+    } else wb.style.display='none';
+
+    // Bar chart: currents at Vm
+    const Jcl=GHK.ionCurrent(v.PCl,-1,Vm,v.Cli,v.Clo);
+    const Jcav=on?GHK.ionCurrent(v.PCa,2,Vm,v.Cai,v.Cao):0;
+    const scale=Math.max(Math.abs(Jk),Math.abs(Jna),Math.abs(Jcl),Math.abs(Jcav),1e-20);
+    getOrCreateChart('t3Chart',{
+      type:'bar',
+      data:{labels:['K⁺','Na⁺','Cl⁻',on?'Ca²⁺':null].filter(Boolean),
+        datasets:[{
+          label:'Relative current (outward +)',
+          data:[Jk/scale,Jna/scale,Jcl/scale,on?Jcav/scale:null].filter(x=>x!=null),
+          backgroundColor:[ION_COLORS.k,ION_COLORS.na,ION_COLORS.cl,on?ION_COLORS.ca:null].filter(Boolean),
+          borderRadius:3
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},title:{display:true,text:'Ion Currents at Vm (normalised)',color:'#9090a8',font:{size:11}}},
+        scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'}},
+                y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'},
+                   title:{display:true,text:'Relative J',color:'#9090a8'}}}
+      }
+    });
+
+    showStatus('t3Status',`Vm = ${fmt(Vm,3)} mV | E_K=${fmt(Ek,1)} | E_Na=${fmt(Ena,1)} | E_Cl=${fmt(Ecl,1)} | E_Ca=${fmt(Eca,1)} mV`,'ok');
+  }
+
+  document.getElementById('t3Preset').addEventListener('click',()=>{
+    Object.keys(PHYS).forEach(k=>{const e=document.getElementById('t3'+k);if(e)e.value=PHYS[k];});
+    document.getElementById('t3CaOn').checked=true;
+    document.getElementById('t3Solve').value='Vm';
+    updateCaUI(); calc();
+  });
+  document.getElementById('t3Reset').addEventListener('click',()=>{
+    Object.keys(DEFS).forEach(k=>{const e=document.getElementById('t3'+k);if(e)e.value=DEFS[k];});
+    document.getElementById('t3Solve').value='Vm';
+    updateCaUI();
+  });
+  document.getElementById('t3Calc').addEventListener('click',calc);
+  document.getElementById('t3DlChart').addEventListener('click',()=>dlChart('t3Chart'));
+  document.getElementById('t3').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT')calc();});
+  updateCaUI(); calc();
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB 4 — PERMEABILITY RATIO SOLVER
+═══════════════════════════════════════════════════════════════ */
+(function(){
+  const PHYS={Vm:-70,Ko:5,Ki:140,Nao:145,Nai:12,Clo:110,Cli:4,Cao:2,Cai:0.0001,
+              PKd:1,PNad:0.04,PCld:0.45,PCad:0.000001,PKfix:1,PClfix:0.45,PCafix:0.000001};
+
+  function getMode(){ return document.querySelector('input[name="t4mode"]:checked').value; }
+
+  function updateModeUI(){
+    const m=getMode();
+    const showCl=['B','C','D','E'].includes(m);
+    const showCa=['C','D'].includes(m);
+    document.querySelectorAll('.t4-cl-row').forEach(el=>el.style.display=showCl?'':'none');
+    document.querySelectorAll('.t4-ca-row').forEach(el=>el.style.display=showCa?'':'none');
+    document.getElementById('t4RatioSelWrap').style.display=['B','C'].includes(m)?'':'none';
+    document.getElementById('t4PermFix').style.display=['B','C'].includes(m)?'':'none';
+    document.getElementById('t4PermAll').style.display=m==='D'?'':'none';
+    document.getElementById('t4SweepConf').style.display=m==='E'?'':'none';
+    // Result panels
+    document.getElementById('t4ResultA').style.display=m==='A'?'':'none';
+    document.getElementById('t4ResultBC').style.display=['B','C'].includes(m)?'':'none';
+    document.getElementById('t4ResultD').style.display=m==='D'?'':'none';
+    document.getElementById('t4ResultE').style.display=m==='E'?'':'none';
+  }
+
+  document.querySelectorAll('input[name="t4mode"]').forEach(r=>r.addEventListener('change',updateModeUI));
+
+  function gv(id){ return parseFloat(document.getElementById(id).value); }
+
+  function calcModeA(){
+    const Vm=gv('t4Vm'),Ko=gv('t4Ko'),Ki=gv('t4Ki'),Nao=gv('t4Nao'),Nai=gv('t4Nai');
+    if([Vm,Ko,Ki,Nao,Nai].some(isNaN)){showStatus('t4Status','Fill all fields.','err');return;}
+    const nf=GHK.RT_F();
+    const u=Vm/nf; // FVm/RT
+    const expU=Math.exp(u);
+    const denom=Ki*expU-Ko;
+    if(Math.abs(denom)<1e-12){showStatus('t4Status','Denominator ≈ 0 — try different Vm or concentrations.','err');return;}
+    const ratio=(Nao-Nai*expU)/denom;
+    if(!isFinite(ratio)){showStatus('t4Status','Could not compute ratio.','err');return;}
+
+    document.getElementById('t4RatioOut').textContent=ratio.toFixed(5);
+    document.getElementById('t4RatioLabel').textContent='P_K / P_Na';
+
+    // Substituted formula
+    const nfStr=nf.toFixed(2);
+    document.getElementById('t4FormulaSub').textContent=
+      `P_K/P_Na = (${Nao} − ${Nai}·exp(${Vm}/${nfStr})) / (${Ki}·exp(${Vm}/${nfStr}) − ${Ko})\n`+
+      `         = (${Nao} − ${Nai}·${expU.toFixed(4)}) / (${Ki}·${expU.toFixed(4)} − ${Ko})\n`+
+      `         = ${(Nao-Nai*expU).toFixed(4)} / ${denom.toFixed(4)}\n`+
+      `         = ${ratio.toFixed(5)}`;
+
+    // Sensitivity: ±1 mV
+    const tbody=document.getElementById('t4SensTbody');
+    tbody.innerHTML='';
+    [-2,-1,0,1,2].forEach(dV=>{
+      const Vm2=Vm+dV;
+      const u2=Vm2/nf;
+      const e2=Math.exp(u2);
+      const d2=Ki*e2-Ko;
+      const r2=Math.abs(d2)>1e-12?(Nao-Nai*e2)/d2:NaN;
+      const delta=isFinite(r2)?r2-ratio:NaN;
+      const pct=isFinite(r2)&&Math.abs(ratio)>1e-12?(delta/ratio*100):NaN;
+      const tr=document.createElement('tr');
+      if(dV===0) tr.style.background='rgba(79,195,247,.06)';
+      tr.innerHTML=`<td>${Vm2} mV</td><td>${isFinite(r2)?r2.toFixed(5):'—'}</td>`+
+        `<td>${isFinite(delta)?delta.toFixed(5):'—'}</td><td>${isFinite(pct)?pct.toFixed(2)+'%':'—'}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    showStatus('t4Status',`P_K/P_Na = ${ratio.toFixed(5)} at Vm = ${Vm} mV`,'ok');
+  }
+
+  function calcModeBC(){
+    const m=getMode();
+    const Vm=gv('t4Vm'),Ko=gv('t4Ko'),Ki=gv('t4Ki'),Nao=gv('t4Nao'),Nai=gv('t4Nai');
+    const Clo=gv('t4Clo'),Cli=gv('t4Cli'),Cao=gv('t4Cao'),Cai=gv('t4Cai');
+    const PKfix=gv('t4PKfix'),PClfix=gv('t4PClfix'),PCafix=gv('t4PCafix');
+    const ratioSel=document.getElementById('t4RatioSel').value;
+
+    // Fix P_K=PKfix, solve for P_Na such that GHK(Vm) = measured Vm
+    // Then ratio = PKfix / PNa_solved
+    const f = PNa => {
+      if(m==='B') return GHK.ghk3(Ko,Ki,Nao,Nai,Clo,Cli,PKfix,PNa,PClfix)-Vm;
+      const res=GHK.ghk4Solve(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PKfix,PNa,PClfix,PCafix);
+      return (res.value||0)-Vm;
+    };
+    const res=GHK.bisect(f,1e-9,1000);
+    if(!res.converged||isNaN(res.value)){showStatus('t4Status','Did not converge.','err');return;}
+    const PNasolved=res.value;
+    let ratio, label;
+    if(ratioSel==='PKNa'){ratio=PKfix/PNasolved;label='P_K/P_Na';}
+    else if(ratioSel==='PKCl'){
+      // Fix PNa, solve for PCl
+      const f2=PCl=>{
+        if(m==='B') return GHK.ghk3(Ko,Ki,Nao,Nai,Clo,Cli,PKfix,PNasolved,PCl)-Vm;
+        const r=GHK.ghk4Solve(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PKfix,PNasolved,PCl,PCafix);
+        return (r.value||0)-Vm;
+      };
+      const r2=GHK.bisect(f2,1e-9,1000);
+      ratio=r2.converged?PKfix/r2.value:NaN; label='P_K/P_Cl';
+    } else {
+      ratio=PNasolved/PClfix; label='P_Na/P_Cl';
+    }
+
+    document.getElementById('t4BCRatioOut').textContent=isFinite(ratio)?ratio.toFixed(5):'—';
+    document.getElementById('t4BCLabel').textContent=label;
+    document.getElementById('t4BCIter').textContent=`Converged in ${res.iterations} iterations.`;
+    document.getElementById('t4BCIter').className='status ok';
+    showStatus('t4Status',`${label} = ${isFinite(ratio)?ratio.toFixed(5):'—'}`,'ok');
+  }
+
+  function calcModeD(){
+    const ions=['K','Na','Cl','Ca'];
+    const vals={PK:gv('t4PKd'),PNa:gv('t4PNad'),PCl:gv('t4PCld'),PCa:gv('t4PCad')};
+    const Ps=[vals.PK,vals.PNa,vals.PCl,vals.PCa];
+    let html='<table class="matrix-table"><thead><tr><th>Row/Col</th>';
+    ions.forEach(i=>html+=`<th>${i==='Cl'?'Cl⁻':i==='Ca'?'Ca²⁺':i+'⁺'}</th>`);
+    html+='</tr></thead><tbody>';
+    ions.forEach((ri,ii)=>{
+      html+=`<tr><th>${ri==='Cl'?'Cl⁻':ri==='Ca'?'Ca²⁺':ri+'⁺'}</th>`;
+      ions.forEach((ci2,ji)=>{
+        if(ii===ji) html+='<td class="diag">1.000</td>';
+        else{const r=Ps[ii]/Ps[ji]; html+=`<td>${isFinite(r)?r.toFixed(4):'—'}</td>`;}
+      });
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+    document.getElementById('t4MatrixWrap').innerHTML=html;
+    showStatus('t4Status','Ratio matrix computed.','ok');
+  }
+
+  function calcModeE(){
+    const Ko=gv('t4Ko'),Ki=gv('t4Ki'),Nao=gv('t4Nao'),Nai=gv('t4Nai');
+    const Clo=gv('t4Clo'),Cli=gv('t4Cli');
+    const PCl=gv('t4SweepPCl');
+    const rMin=gv('t4SweepMin'),rMax=gv('t4SweepMax');
+    if(rMin<=0||rMax<=rMin){showStatus('t4Status','Invalid sweep range.','err');return;}
+    const N=80;
+    const xs=[],ys=[];
+    for(let i=0;i<N;i++){
+      const t=i/(N-1);
+      const r=Math.exp(Math.log(rMin)+t*Math.log(rMax/rMin)); // log-space
+      const Vm=GHK.ghk3(Ko,Ki,Nao,Nai,Clo,Cli,r,1,PCl); // PK=r, PNa=1
+      xs.push(r); ys.push(isFinite(Vm)?Vm:null);
+    }
+    getOrCreateChart('t4Chart',{
+      type:'line',
+      data:{datasets:[{label:'Vm vs P_K/P_Na',data:xs.map((x,i)=>({x,y:ys[i]})),
+        borderColor:'#4fc3f7',borderWidth:1.5,pointRadius:0,tension:0.2}]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{type:'logarithmic',title:{display:true,text:'P_K / P_Na (log)',color:'#9090a8'},
+             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}},
+          y:{title:{display:true,text:'Vm (mV)',color:'#9090a8'},
+             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}}
+        }
+      }
+    });
+    showStatus('t4Status','Ratio curve plotted.','ok');
+  }
+
+  function calc(){
+    clearStatus('t4Status');
+    const m=getMode();
+    if(m==='A') calcModeA();
+    else if(m==='B'||m==='C') calcModeBC();
+    else if(m==='D') calcModeD();
+    else if(m==='E') calcModeE();
+  }
+
+  document.getElementById('t4Calc').addEventListener('click',calc);
+  document.getElementById('t4Preset').addEventListener('click',()=>{
+    ['Vm','Ko','Ki','Nao','Nai','Clo','Cli','Cao','Cai','PKd','PNad','PCld','PCad','PKfix','PClfix','PCafix','SweepPCl']
+    .forEach(k=>{const e=document.getElementById('t4'+k); if(e&&PHYS[k]!==undefined)e.value=PHYS[k];});
+    calc();
+  });
+  document.getElementById('t4').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT')calc();});
+  document.getElementById('t4DlChart').addEventListener('click',()=>dlChart('t4Chart'));
+  updateModeUI(); calc();
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB 5 — NERNST COMPANION
+═══════════════════════════════════════════════════════════════ */
+(function(){
+  const PHYS={Ko:5,Ki:140,Nao:145,Nai:12,Clo:110,Cli:4,Cao:2,Cai:0.0001,PK:1,PNa:0.04,PCl:0.45,PCa:0.000001};
+
+  function gv(k){ return parseFloat(document.getElementById('t5'+k).value); }
+
+  function calc(){
+    const v={}; const errs=[];
+    ['Ko','Ki','Nao','Nai','Clo','Cli','Cao','Cai','PK','PNa','PCl','PCa'].forEach(k=>{
+      const val=gv(k);
+      if(isNaN(val)||val<0) errs.push(k);
+      else v[k]=val;
+    });
+    if(errs.length){showStatus('t5Status','Invalid: '+errs.join(','),'err');return;}
+
+    // 4-ion GHK Vm
+    const res=GHK.ghk4Solve(v.Ko,v.Ki,v.Nao,v.Nai,v.Clo,v.Cli,v.Cao,v.Cai,v.PK,v.PNa,v.PCl,v.PCa);
+    const Vm=res.value;
+
+    const Ek=GHK.nernst(1,v.Ko,v.Ki);
+    const Ena=GHK.nernst(1,v.Nao,v.Nai);
+    const Ecl=GHK.nernst(-1,v.Clo,v.Cli);
+    const Eca=GHK.nernst(2,v.Cao,v.Cai);
+
+    const ions=[{name:'K⁺',E:Ek,color:ION_COLORS.k,eid:'Ek',dfid:'DFk',dirid:'Dirk'},
+                {name:'Na⁺',E:Ena,color:ION_COLORS.na,eid:'Ena',dfid:'DFna',dirid:'Dirna'},
+                {name:'Cl⁻',E:Ecl,color:ION_COLORS.cl,eid:'Ecl',dfid:'DFcl',dirid:'Dircl'},
+                {name:'Ca²⁺',E:Eca,color:ION_COLORS.ca,eid:'Eca',dfid:'DFca',dirid:'Dirca'}];
+
+    ions.forEach(({E,eid,dfid,dirid})=>{
+      const df=Vm-E;
+      setTx('t5'+eid,fmtMv(E));
+      setEl('t5'+dfid,`<span ${dirClass(df)}>${fmt(df,2)} mV</span>`);
+      setEl('t5'+dirid,`<span ${dirClass(df)}>${direction(df)}</span>`);
+    });
+
+    // Horizontal bar chart
+    const allE=[Ek,Ena,Ecl,Eca];
+    const closest=ions.reduce((a,b)=>Math.abs(b.E-Vm)<Math.abs(a.E-Vm)?b:a);
+    const summary=`GHK Vm = ${fmt(Vm,2)} mV\nClosest Nernst: ${closest.name} (E = ${fmt(closest.E,1)} mV, distance ${fmt(Math.abs(Vm-closest.E),1)} mV)\nE_K = ${fmt(Ek,1)} | E_Na = ${fmt(Ena,1)} | E_Cl = ${fmt(Ecl,1)} | E_Ca = ${fmt(Eca,1)} mV`;
+    document.getElementById('t5Summary').textContent=summary;
+
+    getOrCreateChart('t5Bar',{
+      type:'bar',
+      data:{
+        labels:ions.map(i=>i.name),
+        datasets:[{label:'E_ion (mV)',data:allE,backgroundColor:ions.map(i=>i.color),borderRadius:3,borderWidth:0}]
+      },
+      options:{
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          title:{display:true,text:'Nernst Potentials (bar) — GHK Vm (line)',color:'#9090a8',font:{size:11}},
+          annotation:{
+            annotations:isFinite(Vm)?{vmLine:{type:'line',xMin:Vm,xMax:Vm,borderColor:'#4fc3f7',borderWidth:2,label:{content:`Vm=${fmt(Vm,1)}mV`,display:true,color:'#4fc3f7',font:{size:10}}}}:{}
+          }
+        },
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'},
+             title:{display:true,text:'Potential (mV)',color:'#9090a8'}},
+          y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'}}
+        }
+      }
+    });
+
+    showStatus('t5Status',`Vm=${fmt(Vm,2)} mV | E_K=${fmt(Ek,1)} E_Na=${fmt(Ena,1)} E_Cl=${fmt(Ecl,1)} E_Ca=${fmt(Eca,1)}`,'ok');
+  }
+
+  document.getElementById('t5Calc').addEventListener('click',calc);
+  document.getElementById('t5Preset').addEventListener('click',()=>{Object.keys(PHYS).forEach(k=>{const e=document.getElementById('t5'+k);if(e)e.value=PHYS[k];});calc();});
+  document.getElementById('t5Reset').addEventListener('click',()=>{Object.keys(PHYS).forEach(k=>{const e=document.getElementById('t5'+k);if(e)e.value=PHYS[k];});clearStatus('t5Status');});
+  document.getElementById('t5DlBar').addEventListener('click',()=>dlChart('t5Bar'));
+  document.getElementById('t5').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT')calc();});
+  calc();
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB 6 — GHK CURRENT DENSITY
+═══════════════════════════════════════════════════════════════ */
+(function(){
+  const PHYS={Ko:5,Ki:140,Nao:145,Nai:12,Clo:110,Cli:4,Cao:2,Cai:0.0001,PK:1,PNa:0.04,PCl:0.45,PCa:0.000001,Vm:-70};
+
+  function gv(k){ return parseFloat(document.getElementById('t6'+k).value); }
+
+  function calc(){
+    clearStatus('t6Status');
+    const v={}; let errs=[];
+    ['Ko','Ki','Nao','Nai','Clo','Cli','Cao','Cai','PK','PNa','PCl','PCa','Vm'].forEach(k=>{
+      const val=gv(k); if(isNaN(val)) errs.push(k); else v[k]=val;
+    });
+    if(errs.length){showStatus('t6Status','Invalid: '+errs.join(','),'err');return;}
+    const Vm=v.Vm;
+
+    const Jk=GHK.ionCurrent(v.PK, 1,Vm,v.Ki, v.Ko);
+    const Jna=GHK.ionCurrent(v.PNa,1,Vm,v.Nai,v.Nao);
+    const Jcl=GHK.ionCurrent(v.PCl,-1,Vm,v.Cli,v.Clo);
+    const Jca=GHK.ionCurrent(v.PCa,2,Vm,v.Cai,v.Cao);
+    const Jtot=Jk+Jna+Jcl+Jca;
+
+    const dirJ=(J)=>J>1e-15?'↑ Outward':J<-1e-15?'↓ Inward':'≈ 0';
+
+    setTx('t6Jk',Jk.toExponential(3)); setEl('t6DirJk',`<span ${dirClass(Jk)}>${dirJ(Jk)}</span>`);
+    setTx('t6Jna',Jna.toExponential(3)); setEl('t6DirJna',`<span ${dirClass(Jna)}>${dirJ(Jna)}</span>`);
+    setTx('t6Jcl',Jcl.toExponential(3)); setEl('t6DirJcl',`<span ${dirClass(Jcl)}>${dirJ(Jcl)}</span>`);
+    setTx('t6Jca',Jca.toExponential(3)); setEl('t6DirJca',`<span ${dirClass(Jca)}>${dirJ(Jca)}</span>`);
+    setTx('t6Jtot',Jtot.toExponential(3));
+    const revV=GHK.ghk4Solve(v.Ko,v.Ki,v.Nao,v.Nai,v.Clo,v.Cli,v.Cao,v.Cai,v.PK,v.PNa,v.PCl,v.PCa);
+    document.getElementById('t6TotNote').textContent=
+      isFinite(revV.value)?`(Reversal potential = ${fmt(revV.value,2)} mV)`:'';
+
+    // I-V curve −100 to +100
+    const nPoints=101;
+    const vmArr=Array.from({length:nPoints},(_,i)=>-100+i*2);
+    const datasets=[
+      {label:'K⁺', borderColor:ION_COLORS.k, data:vmArr.map(vv=>({x:vv,y:GHK.ionCurrent(v.PK,1,vv,v.Ki,v.Ko)}))},
+      {label:'Na⁺',borderColor:ION_COLORS.na,data:vmArr.map(vv=>({x:vv,y:GHK.ionCurrent(v.PNa,1,vv,v.Nai,v.Nao)}))},
+      {label:'Cl⁻',borderColor:ION_COLORS.cl,data:vmArr.map(vv=>({x:vv,y:GHK.ionCurrent(v.PCl,-1,vv,v.Cli,v.Clo)}))},
+      {label:'Ca²⁺',borderColor:ION_COLORS.ca,data:vmArr.map(vv=>({x:vv,y:GHK.ionCurrent(v.PCa,2,vv,v.Cai,v.Cao)}))},
+      {label:'Total',borderColor:'#fff',borderDash:[4,2],data:vmArr.map(vv=>({x:vv,
+         y:GHK.ionCurrent(v.PK,1,vv,v.Ki,v.Ko)+GHK.ionCurrent(v.PNa,1,vv,v.Nai,v.Nao)
+          +GHK.ionCurrent(v.PCl,-1,vv,v.Cli,v.Clo)+GHK.ionCurrent(v.PCa,2,vv,v.Cai,v.Cao)}))},
+    ];
+    datasets.forEach(d=>{Object.assign(d,{borderWidth:1.5,pointRadius:0,tension:0.2,fill:false});});
+
+    getOrCreateChart('t6IV',{
+      type:'line',data:{datasets},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},
+        scales:{
+          x:{type:'linear',title:{display:true,text:'Vm (mV)',color:'#9090a8'},
+             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}},
+          y:{title:{display:true,text:'Current (rel.)',color:'#9090a8'},
+             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}}
+        }
+      }
+    });
+
+    // Bar
+    const scale=Math.max(Math.abs(Jk),Math.abs(Jna),Math.abs(Jcl),Math.abs(Jca),1e-20);
+    getOrCreateChart('t6Bar',{
+      type:'bar',
+      data:{labels:['K⁺','Na⁺','Cl⁻','Ca²⁺'],
+        datasets:[{label:'J (relative)',data:[Jk/scale,Jna/scale,Jcl/scale,Jca/scale],
+          backgroundColor:[ION_COLORS.k,ION_COLORS.na,ION_COLORS.cl,ION_COLORS.ca],borderRadius:3}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'}},
+                y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'}}}}
+    });
+
+    showStatus('t6Status',`J_K=${Jk.toExponential(2)}, J_Na=${Jna.toExponential(2)}, J_Cl=${Jcl.toExponential(2)}, J_Ca=${Jca.toExponential(2)}, Total=${Jtot.toExponential(2)}`,'ok');
+  }
+
+  document.getElementById('t6Calc').addEventListener('click',calc);
+  document.getElementById('t6UseGHK').addEventListener('click',()=>{
+    const vals={};
+    ['Ko','Ki','Nao','Nai','Clo','Cli','Cao','Cai','PK','PNa','PCl','PCa'].forEach(k=>{
+      vals[k]=gv(k); if(isNaN(vals[k])) vals[k]=PHYS[k];
+    });
+    const res=GHK.ghk4Solve(vals.Ko,vals.Ki,vals.Nao,vals.Nai,vals.Clo,vals.Cli,vals.Cao,vals.Cai,vals.PK,vals.PNa,vals.PCl,vals.PCa);
+    if(isFinite(res.value)) document.getElementById('t6Vm').value=res.value.toFixed(3);
+    calc();
+  });
+  document.getElementById('t6Preset').addEventListener('click',()=>{Object.keys(PHYS).forEach(k=>{const e=document.getElementById('t6'+k);if(e)e.value=PHYS[k];});calc();});
+  document.getElementById('t6DlIV').addEventListener('click',()=>dlChart('t6IV'));
+  document.getElementById('t6DlBar').addEventListener('click',()=>dlChart('t6Bar'));
+  document.getElementById('t6').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT')calc();});
+  calc();
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB 7 — SWEEP
+═══════════════════════════════════════════════════════════════ */
+(function(){
+  const PHYS={Ko:5,Ki:140,Nao:145,Nai:12,Clo:110,Cli:4,Cao:2,Cai:0.0001,PK:1,PNa:0.04,PCl:0.45,PCa:0.000001};
+  const COLORS=['#4fc3f7','#ff9800','#4caf50','#ab47bc','#ef5350'];
+  let extraCurves=[];
+  let lastData=null;
+
+  function gv(k){ return parseFloat(document.getElementById('t7'+k).value); }
+  function getScale(){ return document.querySelector('input[name="t7scale"]:checked').value; }
+
+  function getFixed(){
+    const f={};
+    ['Ko','Ki','Nao','Nai','Clo','Cli','Cao','Cai','PK','PNa','PCl','PCa'].forEach(k=>f[k]=gv(k)||PHYS[k]);
+    return f;
+  }
+
+  function sweepVarName(){
+    const v=document.getElementById('t7Var').value;
+    const m={'Ko':'[K⁺]ₒ','Ki':'[K⁺]ᵢ','Nao':'[Na⁺]ₒ','Nai':'[Na⁺]ᵢ',
+             'Clo':'[Cl⁻]ₒ','Cli':'[Cl⁻]ᵢ','Cao':'[Ca²⁺]ₒ','Cai':'[Ca²⁺]ᵢ',
+             'PK':'P_K','PNa':'P_Na','PCl':'P_Cl','PCa':'P_Ca',
+             'ratio_KNa':'P_K/P_Na','ratio_KCl':'P_K/P_Cl','Temp':'Temperature (°C)'};
+    return m[v]||v;
+  }
+
+  function computeCurve(fixed, varKey, xs){
+    return xs.map(x=>{
+      const p=Object.assign({},fixed);
+      if(varKey==='ratio_KNa'){p.PK=x*p.PNa;}
+      else if(varKey==='ratio_KCl'){p.PK=x*p.PCl;}
+      else if(varKey==='Temp'){/* handled specially */}
+      else p[varKey]=x;
+
+      if(varKey==='Temp'){
+        // Temporarily override temp; use ghk3 only (not global temp)
+        const nf = GHK.R*(x+273.15)/GHK.F*1000;
+        const num=p.PK*p.Ko+p.PNa*p.Nao+p.PCl*p.Cli;
+        const den=p.PK*p.Ki+p.PNa*p.Nai+p.PCl*p.Clo;
+        return (num>0&&den>0)?nf*Math.log(num/den):null;
+      }
+      const res=GHK.ghk4Solve(p.Ko,p.Ki,p.Nao,p.Nai,p.Clo,p.Cli,p.Cao,p.Cai,p.PK,p.PNa,p.PCl,p.PCa);
+      return isFinite(res.value)?res.value:null;
+    });
+  }
+
+  function makeXs(min,max,steps,scale){
+    const arr=[];
+    for(let i=0;i<steps;i++){
+      const t=i/(steps-1);
+      const x=scale==='log'?Math.exp(Math.log(min)+t*Math.log(max/min)):min+t*(max-min);
+      arr.push(x);
+    }
+    return arr;
+  }
+
+  function calc(){
+    clearStatus('t7Status');
+    const varKey=document.getElementById('t7Var').value;
+    const min=gv('Min'),max=gv('Max'),steps=Math.round(gv('Steps')||100);
+    const scale=getScale();
+    if(isNaN(min)||isNaN(max)||min>=max){showStatus('t7Status','Invalid range.','err');return;}
+    if(scale==='log'&&min<=0){showStatus('t7Status','Log scale requires min > 0.','err');return;}
+
+    const fixed=getFixed();
+    const xs=makeXs(min,max,steps,scale);
+    const ys=computeCurve(fixed,varKey,xs);
+
+    const vn=sweepVarName();
+    const datasets=[{
+      label:'Curve 1',data:xs.map((x,i)=>({x,y:ys[i]})),
+      borderColor:COLORS[0],borderWidth:1.5,pointRadius:0,tension:0.1,fill:false
+    }];
+
+    // Extra curves
+    extraCurves.forEach((ec,idx)=>{
+      const f2=Object.assign({},fixed);
+      Object.keys(ec.overrides).forEach(k=>f2[k]=ec.overrides[k]);
+      const ys2=computeCurve(f2,varKey,xs);
+      datasets.push({
+        label:ec.label||`Curve ${idx+2}`,data:xs.map((x,i)=>({x,y:ys2[i]})),
+        borderColor:COLORS[idx+1]||'#fff',borderWidth:1.5,pointRadius:0,tension:0.1,fill:false
+      });
+    });
+
+    lastData={xs,datasets,vn};
+
+    getOrCreateChart('t7Chart',{
+      type:'line',data:{datasets},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},
+        scales:{
+          x:{type:scale==='log'?'logarithmic':'linear',
+             title:{display:true,text:vn,color:'#9090a8'},
+             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}},
+          y:{title:{display:true,text:'Vm (mV)',color:'#9090a8'},
+             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}}
+        }
+      }
+    });
+
+    // Data table (first 50 rows)
+    const shown=Math.min(xs.length,50);
+    let th=`<table class="dtable"><thead><tr><th>${vn}</th>`;
+    datasets.forEach(d=>th+=`<th>${d.label}</th>`);
+    th+='</tr></thead><tbody>';
+    const rows=[];
+    for(let i=0;i<xs.length;i++){
+      let row=`<tr><td>${xs[i].toPrecision(4)}</td>`;
+      datasets.forEach(d=>row+=`<td>${d.data[i]&&d.data[i].y!=null?fmt(d.data[i].y,3):'—'}</td>`);
+      row+='</tr>';
+      if(i<shown) th+=row;
+      // build CSV rows
+      const r={[vn]:xs[i]};
+      datasets.forEach(d=>r[d.label]=d.data[i]&&d.data[i].y!=null?d.data[i].y:null);
+      rows.push(r);
+    }
+    th+='</tbody></table>';
+    document.getElementById('t7TableWrap').innerHTML=th;
+    document.getElementById('t7DataCount').textContent=`(${xs.length} pts)`;
+    lastData.csvRows=rows;
+    showStatus('t7Status',`Sweep complete: ${xs.length} points.`,'ok');
+  }
+
+  document.getElementById('t7Calc').addEventListener('click',calc);
+  document.getElementById('t7DlChart').addEventListener('click',()=>dlChart('t7Chart'));
+  document.getElementById('t7DlCSV').addEventListener('click',()=>{
+    if(lastData&&lastData.csvRows) GHK.exportCSV(lastData.csvRows,'sweep_data.csv');
+  });
+
+  document.getElementById('t7AddCurve').addEventListener('click',()=>{
+    if(extraCurves.length>=4){showStatus('t7Status','Max 5 curves.','warn');return;}
+    const idx=extraCurves.length;
+    const id='t7ec'+idx;
+    const div=document.createElement('div');
+    div.id=id; div.style.cssText='margin-top:8px;padding:8px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:6px';
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+      <span style="width:10px;height:10px;border-radius:50%;background:${COLORS[idx+1]};flex-shrink:0"></span>
+      <span style="font-size:12px;flex:1">Curve ${idx+2} overrides (leave blank = same as base)</span>
+      <button class="btn btn-ghost btn-xs" data-ec-idx="${idx}" data-ec-id="${id}" onclick="this.closest('[id]').remove()">✕</button>
+    </div>
+    <div class="grid3">
+      <div class="ig"><label>P_K</label><input type="number" class="ec-PK" placeholder="—" step="any"></div>
+      <div class="ig"><label>P_Na</label><input type="number" class="ec-PNa" placeholder="—" step="any"></div>
+      <div class="ig"><label>P_Cl</label><input type="number" class="ec-PCl" placeholder="—" step="any"></div>
+      <div class="ig"><label>[K⁺]ₒ</label><input type="number" class="ec-Ko" placeholder="—" step="any"></div>
+      <div class="ig"><label>[Na⁺]ₒ</label><input type="number" class="ec-Nao" placeholder="—" step="any"></div>
+      <div class="ig"><label>Label</label><input type="text" class="ec-label" placeholder="Curve ${idx+2}"></div>
+    </div>`;
+    document.getElementById('t7ExtraCurves').appendChild(div);
+
+    extraCurves.push({id, overrides:{}, label:`Curve ${idx+2}`});
+    // Watch for input changes
+    div.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('change',()=>{
+        const ec=extraCurves[idx];
+        if(!ec) return;
+        ['PK','PNa','PCl','Ko','Nao'].forEach(k=>{
+          const v=parseFloat(div.querySelector('.ec-'+k)?.value);
+          if(!isNaN(v)) ec.overrides[k]=v; else delete ec.overrides[k];
+        });
+        const lbl=div.querySelector('.ec-label').value;
+        ec.label=lbl||`Curve ${idx+2}`;
+      });
+    });
+  });
+
+  document.getElementById('t7ClearCurves').addEventListener('click',()=>{
+    extraCurves=[]; document.getElementById('t7ExtraCurves').innerHTML='';
+  });
+  document.getElementById('t7').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT')calc();});
+  calc();
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB 8 — BATCH SIMULATOR
+═══════════════════════════════════════════════════════════════ */
+(function(){
+  const COLS=['Ko','Ki','Nao','Nai','Clo','Cli','Cao','Cai','PK','PNa','PCl','PCa','Temp'];
+  const DEFS={Ko:5,Ki:140,Nao:145,Nai:12,Clo:110,Cli:4,Cao:2,Cai:0.0001,PK:1,PNa:0.04,PCl:0.45,PCa:0.000001,Temp:37};
+  let batchResults=[];
+
+  // Row creation
+  function makeRow(rowNum, data={}){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="color:var(--text2);font-size:11px;padding:4px 6px">${rowNum}</td>`+
+      COLS.map(k=>`<td><input type="number" data-col="${k}" placeholder="${DEFS[k]}" step="any" value="${data[k]!==undefined?data[k]:''}"></td>`).join('')+
+      '<td class="vm-cell" data-vm></td>';
+    return tr;
+  }
+
+  // Init 8 rows
+  const tbody=document.getElementById('t8ManualBody');
+  for(let i=1;i<=8;i++) tbody.appendChild(makeRow(i));
+
+  document.getElementById('t8AddRow').addEventListener('click',()=>{
+    const n=tbody.children.length+1;
+    tbody.appendChild(makeRow(n));
+  });
+
+  function runRow(tr){
+    const vals={}; let useDefault=false;
+    tr.querySelectorAll('input[data-col]').forEach(inp=>{
+      const v=parseFloat(inp.value);
+      vals[inp.dataset.col]=isNaN(v)?DEFS[inp.dataset.col]:v;
+    });
+    const T=vals.Temp||37;
+    // Temporarily set global temp
+    const origT=document.getElementById('gTemp').value;
+    document.getElementById('gTemp').value=T;
+    const res=GHK.ghk4Solve(vals.Ko,vals.Ki,vals.Nao,vals.Nai,vals.Clo,vals.Cli,vals.Cao,vals.Cai,vals.PK,vals.PNa,vals.PCl,vals.PCa);
+    document.getElementById('gTemp').value=origT;
+    const Vm=res.value;
+    const cell=tr.querySelector('[data-vm]');
+    cell.textContent=isFinite(Vm)?fmt(Vm,2):'—';
+    cell.className='vm-cell '+(isFinite(Vm)?Vm<-75?'vm-hyper':Vm>-60?'vm-depol':'vm-mid':'');
+    return isFinite(Vm)?{...vals,Vm}:null;
+  }
+
+  document.getElementById('t8RunManual').addEventListener('click',()=>{
+    batchResults=[];
+    tbody.querySelectorAll('tr').forEach(tr=>{
+      const r=runRow(tr);
+      if(r) batchResults.push(r);
+    });
+    showResults(batchResults,false);
+    showStatus('t8ManualStatus',`Ran ${batchResults.length} rows.`,'ok');
+  });
+
+  document.getElementById('t8DlManualCSV').addEventListener('click',()=>{
+    if(batchResults.length) GHK.exportCSV(batchResults,'batch_manual.csv');
+  });
+
+  // CSV mode
+  document.getElementById('t8ParseCSV').addEventListener('click',()=>{
+    clearStatus('t8CsvStatus');
+    const text=document.getElementById('t8CsvInput').value.trim();
+    if(!text){showStatus('t8CsvStatus','Paste CSV data above.','err');return;}
+    const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+    if(lines.length<2){showStatus('t8CsvStatus','Need header + at least 1 data row.','err');return;}
+    const headers=lines[0].split(',').map(h=>h.trim());
+    batchResults=[];
+    const origT=document.getElementById('gTemp').value;
+    lines.slice(1).forEach(line=>{
+      const parts=line.split(',');
+      const row={};
+      headers.forEach((h,i)=>{ const v=parseFloat(parts[i]); row[h]=isNaN(v)?DEFS[h]:v; });
+      COLS.forEach(k=>{if(row[k]===undefined)row[k]=DEFS[k];});
+      document.getElementById('gTemp').value=row.Temp||37;
+      const res=GHK.ghk4Solve(row.Ko,row.Ki,row.Nao,row.Nai,row.Clo,row.Cli,row.Cao,row.Cai,row.PK,row.PNa,row.PCl,row.PCa);
+      document.getElementById('gTemp').value=origT;
+      if(isFinite(res.value)) batchResults.push({...row,Vm:res.value});
+    });
+    showResults(batchResults,false);
+    showStatus('t8CsvStatus',`Parsed ${batchResults.length} rows.`,'ok');
+  });
+  document.getElementById('t8DlCsvOut').addEventListener('click',()=>{if(batchResults.length)GHK.exportCSV(batchResults,'batch_csv.csv');});
+
+  // Grid mode
+  document.getElementById('t8RunGrid').addEventListener('click',()=>{
+    clearStatus('t8GridStatus');
+    const varA=document.getElementById('t8GridA').value;
+    const varB=document.getElementById('t8GridB').value;
+    const aMin=parseFloat(document.getElementById('t8GAMin').value);
+    const aMax=parseFloat(document.getElementById('t8GAMax').value);
+    const bMin=parseFloat(document.getElementById('t8GBMin').value);
+    const bMax=parseFloat(document.getElementById('t8GBMax').value);
+    const aSteps=parseInt(document.getElementById('t8GASteps').value)||10;
+    const bSteps=parseInt(document.getElementById('t8GBSteps').value)||10;
+    if([aMin,aMax,bMin,bMax].some(isNaN)){showStatus('t8GridStatus','Invalid ranges.','err');return;}
+
+    const origT=document.getElementById('gTemp').value;
+    batchResults=[];
+    const aVals=Array.from({length:aSteps},(_,i)=>aMin+i*(aMax-aMin)/(aSteps-1));
+    const bVals=Array.from({length:bSteps},(_,i)=>bMin+i*(bMax-bMin)/(bSteps-1));
+    const vmGrid=[];
+
+    aVals.forEach(a=>{
+      const row2=[];
+      bVals.forEach(b=>{
+        const p=Object.assign({},DEFS); p[varA]=a; p[varB]=b;
+        const res=GHK.ghk4Solve(p.Ko,p.Ki,p.Nao,p.Nai,p.Clo,p.Cli,p.Cao,p.Cai,p.PK,p.PNa,p.PCl,p.PCa);
+        const Vm=res.value;
+        row2.push(isFinite(Vm)?Vm:null);
+        batchResults.push({[varA]:a,[varB]:b,Vm:isFinite(Vm)?Vm:null});
+      });
+      vmGrid.push(row2);
+    });
+    document.getElementById('gTemp').value=origT;
+
+    showResults(batchResults,true,vmGrid,aVals,bVals,varA,varB);
+    showStatus('t8GridStatus',`Grid: ${aSteps}×${bSteps} = ${batchResults.length} cells.`,'ok');
+  });
+  document.getElementById('t8DlGridCSV').addEventListener('click',()=>{if(batchResults.length)GHK.exportCSV(batchResults,'batch_grid.csv');});
+
+  function showResults(rows, isGrid, vmGrid, aVals, bVals, varA, varB){
+    if(!rows.length) return;
+    document.getElementById('t8ResultsWrap').style.display='';
+
+    // Stats
+    const vms=rows.map(r=>r.Vm).filter(v=>v!=null&&isFinite(v));
+    const mean=vms.reduce((a,b)=>a+b,0)/vms.length;
+    const std=Math.sqrt(vms.reduce((s,v)=>s+(v-mean)**2,0)/vms.length);
+    setTx('t8SCount',rows.length);
+    setTx('t8SMin',fmt(Math.min(...vms),2)+' mV');
+    setTx('t8SMax',fmt(Math.max(...vms),2)+' mV');
+    setTx('t8SMean',fmt(mean,2)+' mV');
+    setTx('t8SStd',fmt(std,2)+' mV');
+
+    // Scatter
+    const xKey=document.getElementById('t8ScatterX').value;
+    getOrCreateChart('t8Scatter',{
+      type:'scatter',
+      data:{datasets:[{label:'Vm',data:rows.map(r=>({x:r[xKey],y:r.Vm})).filter(p=>p.x!=null&&p.y!=null),
+        backgroundColor:'rgba(79,195,247,.6)',pointRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{x:{title:{display:true,text:xKey,color:'#9090a8'},ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}},
+                y:{title:{display:true,text:'Vm (mV)',color:'#9090a8'},ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}}}}
+    });
+
+    // Heatmap
+    const hw=document.getElementById('t8HeatWrap');
+    if(isGrid && vmGrid){
+      hw.style.display='';
+      drawHeatmap(vmGrid, aVals, bVals, varA, varB);
+    } else hw.style.display='none';
+
+    // Results table
+    const allCols=Object.keys(rows[0]);
+    document.getElementById('t8ResHead').innerHTML='<tr>'+allCols.map(k=>`<th>${k}</th>`).join('')+'</tr>';
+    document.getElementById('t8ResBody').innerHTML=rows.slice(0,200).map(r=>{
+      const Vm=r.Vm;
+      const cls=isFinite(Vm)?Vm<-75?'vm-hyper':Vm>-60?'vm-depol':'vm-mid':'';
+      return '<tr>'+allCols.map(k=>{
+        const v=r[k];
+        const isvm=k==='Vm';
+        return `<td${isvm?` class="${cls}"`:''}>${v!=null?typeof v==='number'?v.toPrecision(5):v:'—'}</td>`;
+      }).join('')+'</tr>';
+    }).join('');
+  }
+
+  function drawHeatmap(grid, aVals, bVals, varA, varB){
+    const canvas=document.getElementById('t8Heatmap');
+    const cellW=Math.max(1,Math.floor(560/bVals.length));
+    const cellH=Math.max(1,Math.floor(200/aVals.length));
+    canvas.width=cellW*bVals.length; canvas.height=cellH*aVals.length;
+    canvas.style.height=Math.min(canvas.height,200)+'px';
+    const ctx=canvas.getContext('2d');
+    const allVm=grid.flat().filter(v=>v!=null);
+    const vmin=Math.min(...allVm),vmax=Math.max(...allVm);
+
+    function vmToColor(v){
+      if(v==null) return '#333';
+      const t=(v-vmin)/(vmax-vmin||1);
+      // blue(-) → white(mid) → red(+)
+      const r=Math.round(t<0.5?t*2*100:100+(t-0.5)*2*155);
+      const g=Math.round(t<0.5?t*2*100:(1-t)*2*100);
+      const b=Math.round(t<0.5?100+(0.5-t)*2*155:t<0.5?255:0);
+      return `rgb(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,b)})`;
+    }
+
+    grid.forEach((row,ai)=>{
+      row.forEach((v,bi)=>{
+        ctx.fillStyle=vmToColor(v);
+        ctx.fillRect(bi*cellW,ai*cellH,cellW,cellH);
+      });
+    });
+
+    // Scale bar
+    const scaleEl=document.getElementById('t8HeatScale');
+    scaleEl.innerHTML=`<span style="color:#6495ed">≤${fmt(vmin,1)} mV (hyper)</span>`+
+      `<div style="flex:1;height:10px;background:linear-gradient(to right,#6495ed,#888,#cd5c5c);border-radius:2px"></div>`+
+      `<span style="color:#cd5c5c">≥${fmt(vmax,1)} mV (depol)</span>`;
+  }
+
+  // Mode toggle
+  document.querySelectorAll('input[name="t8mode"]').forEach(r=>r.addEventListener('change',()=>{
+    const m=r.value;
+    document.getElementById('t8ManualWrap').style.display=m==='manual'?'':'none';
+    document.getElementById('t8CsvWrap').style.display=m==='csv'?'':'none';
+    document.getElementById('t8GridWrap').style.display=m==='grid'?'':'none';
+  }));
+
+  document.getElementById('t8ScatterX').addEventListener('change',()=>{if(batchResults.length)showResults(batchResults,false);});
+})();
+
+
+/* ═══════════════════════════════════════
+   INIT: restore last tab
+═══════════════════════════════════════ */
+(function(){
+  try{
+    const t=localStorage.getItem('ghk_tab');
+    if(t){
+      const btn=document.querySelector(`.tab-btn[data-tab="${t}"]`);
+      if(btn) btn.click();
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
