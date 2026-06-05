@@ -7,174 +7,183 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#1a1a2e;--bg2:#16213e;--bg3:#0f3460;
-  --accent:#4fc3f7;--accent2:#81d4fa;
-  --text:#e8e8f0;--text2:#9090a8;
-  --err:#ef5350;--ok:#66bb6a;--warn:#ffa726;
-  --k:#4caf50;--na:#ff9800;--cl:#ab47bc;--ca:#ef5350;
-  --border:rgba(79,195,247,0.18);
-  --card:rgba(255,255,255,0.035);
-  --inp:rgba(255,255,255,0.06);
+  --bg:#f0f4f8;--bg2:#ffffff;--bg3:#e2eaf3;
+  --accent:#1565c0;--accent2:#1976d2;
+  --text:#1a2636;--text2:#546e7a;
+  --err:#c62828;--ok:#2e7d32;--warn:#bf360c;
+  --k:#2e7d32;--na:#bf360c;--cl:#6a1b9a;--ca:#b71c1c;
+  --border:rgba(0,0,0,0.11);
+  --card:#ffffff;
+  --inp:rgba(0,0,0,0.04);
+  --shadow:0 1px 4px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.05);
   --rad:6px;
 }
 body{background:var(--bg);color:var(--text);font:14px/1.5 'Segoe UI',system-ui,sans-serif;min-height:100vh}
 
 /* TOP BAR */
-.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 20px;
-  display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:200}
-.topbar-title{color:var(--accent);font-size:17px;font-weight:700;letter-spacing:.3px;flex:1}
-.topbar-title span{opacity:.6;font-weight:400;font-size:13px;margin-left:6px}
-.temp-wrap{display:flex;align-items:center;gap:6px;background:var(--inp);
-  border:1px solid var(--border);border-radius:var(--rad);padding:4px 12px}
-.temp-wrap label{color:var(--text2);font-size:12px}
-.temp-wrap input{background:none;border:none;color:var(--accent);font-size:14px;
+.topbar{background:var(--accent);padding:9px 22px;
+  display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:200;
+  box-shadow:0 2px 6px rgba(0,0,0,0.18)}
+.topbar-title{color:#fff;font-size:17px;font-weight:700;letter-spacing:.3px;flex:1}
+.topbar-title span{opacity:.75;font-weight:400;font-size:13px;margin-left:6px}
+.temp-wrap{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);
+  border:1px solid rgba(255,255,255,0.3);border-radius:var(--rad);padding:4px 12px}
+.temp-wrap label{color:rgba(255,255,255,0.85);font-size:12px}
+.temp-wrap input{background:none;border:none;color:#fff;font-size:14px;
   font-weight:600;width:52px;text-align:right;outline:none}
-.temp-wrap .nf{color:var(--text2);font-size:11px}
+.temp-wrap .nf{color:rgba(255,255,255,0.7);font-size:11px}
 
 /* TAB BAR */
-.tabbar{background:var(--bg2);border-bottom:1px solid var(--border);
-  display:flex;overflow-x:auto;scrollbar-width:thin}
+.tabbar{background:var(--bg2);border-bottom:2px solid var(--border);
+  display:flex;overflow-x:auto;scrollbar-width:thin;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06)}
 .tabbar::-webkit-scrollbar{height:3px}
-.tabbar::-webkit-scrollbar-thumb{background:var(--border)}
-.tab-btn{padding:10px 15px;background:none;border:none;border-bottom:2px solid transparent;
-  color:var(--text2);cursor:pointer;font-size:12.5px;white-space:nowrap;
-  transition:all .2s;font-family:inherit}
-.tab-btn:hover{color:var(--text);background:rgba(255,255,255,.03)}
-.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tabbar::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15)}
+.tab-btn{padding:11px 17px;background:none;border:none;border-bottom:3px solid transparent;
+  color:var(--text2);cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;
+  transition:all .18s;font-family:inherit;margin-bottom:-2px}
+.tab-btn:hover{color:var(--accent);background:rgba(21,101,192,0.05)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(21,101,192,0.04)}
 
 /* PANELS */
-.tab-panel{display:none;padding:18px 20px;max-width:1380px;margin:0 auto}
+.tab-panel{display:none;padding:20px 22px;max-width:1380px;margin:0 auto}
 .tab-panel.active{display:block}
 
 /* CARDS */
-.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px}
-.card-title{color:var(--accent);font-size:11.5px;font-weight:600;text-transform:uppercase;
-  letter-spacing:.6px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;
+  margin-bottom:14px;box-shadow:var(--shadow)}
+.card-title{color:var(--accent);font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.8px;margin-bottom:13px}
 
 /* LAYOUTS */
-.layout-2col{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+.layout-2col{display:grid;grid-template-columns:370px 1fr;gap:18px;align-items:start}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 
 /* INPUT GROUP */
-.ig{display:flex;flex-direction:column;gap:3px;position:relative}
-.ig label{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;user-select:none}
-.ig .unit{color:var(--accent2);font-size:10px}
-.ig .tip{width:14px;height:14px;border-radius:50%;background:rgba(79,195,247,.15);
+.ig{display:flex;flex-direction:column;gap:4px;position:relative}
+.ig label{font-size:11.5px;color:var(--text2);display:flex;align-items:center;gap:4px;
+  font-weight:500;user-select:none}
+.ig .unit{color:var(--accent2);font-size:10.5px;font-weight:600}
+.ig .tip{width:15px;height:15px;border-radius:50%;background:rgba(21,101,192,0.12);
   color:var(--accent);font-size:9px;display:inline-flex;align-items:center;
-  justify-content:center;cursor:help;flex-shrink:0;position:relative}
+  justify-content:center;cursor:help;flex-shrink:0;position:relative;font-weight:700}
 .ig .tip::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;
-  transform:translateX(-50%);background:#222;color:#ddd;padding:5px 8px;border-radius:4px;
-  font-size:10.5px;white-space:pre-line;z-index:500;pointer-events:none;min-width:160px;
-  max-width:220px;display:none;line-height:1.4;text-align:left;border:1px solid var(--border)}
+  transform:translateX(-50%);background:#1e2a3a;color:#e8edf3;padding:6px 10px;border-radius:5px;
+  font-size:11px;white-space:pre-line;z-index:500;pointer-events:none;min-width:160px;
+  max-width:230px;display:none;line-height:1.5;text-align:left;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
 .ig .tip:hover::after{display:block}
-.ig input,.ig select{background:var(--inp);border:1px solid var(--border);color:var(--text);
-  padding:6px 9px;border-radius:4px;font-size:13px;outline:none;width:100%;font-family:inherit;
-  transition:border-color .18s}
-.ig input:focus,.ig select:focus{border-color:var(--accent)}
-.ig input.invalid{border-color:var(--err)!important;background:rgba(239,83,80,.07)}
-.ig input.solved{background:rgba(79,195,247,.08);border-color:var(--accent);
+.ig input,.ig select{background:#fff;border:1.5px solid var(--border);color:var(--text);
+  padding:7px 10px;border-radius:5px;font-size:13px;outline:none;width:100%;font-family:inherit;
+  transition:border-color .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+.ig input:focus,.ig select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(21,101,192,0.1)}
+.ig input.invalid{border-color:var(--err)!important;box-shadow:0 0 0 3px rgba(198,40,40,0.1)}
+.ig input.solved{background:rgba(21,101,192,0.06);border-color:var(--accent);
   color:var(--accent);font-style:italic}
-.ig input:disabled{opacity:.38;cursor:not-allowed}
+.ig input:disabled{opacity:.4;cursor:not-allowed;background:var(--bg)}
 
 /* BUTTONS */
-.btn{padding:7px 14px;border-radius:var(--rad);border:none;cursor:pointer;
-  font-size:12.5px;font-weight:500;font-family:inherit;transition:all .18s;display:inline-flex;
-  align-items:center;gap:5px}
-.btn-primary{background:var(--accent);color:#0d1b2a}
-.btn-primary:hover{background:var(--accent2)}
-.btn-secondary{background:transparent;color:var(--accent);border:1px solid rgba(79,195,247,.4)}
-.btn-secondary:hover{background:rgba(79,195,247,.08)}
-.btn-ghost{background:transparent;color:var(--text2);border:1px solid rgba(255,255,255,.1)}
-.btn-ghost:hover{background:rgba(255,255,255,.05);color:var(--text)}
-.btn-xs{padding:3px 8px;font-size:11px}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{padding:8px 15px;border-radius:var(--rad);border:none;cursor:pointer;
+  font-size:13px;font-weight:600;font-family:inherit;transition:all .15s;display:inline-flex;
+  align-items:center;gap:5px;letter-spacing:.2px}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 5px rgba(21,101,192,0.3)}
+.btn-primary:hover{background:var(--accent2);box-shadow:0 3px 8px rgba(21,101,192,0.35)}
+.btn-secondary{background:#fff;color:var(--accent);border:1.5px solid rgba(21,101,192,0.35)}
+.btn-secondary:hover{background:rgba(21,101,192,0.06);border-color:var(--accent)}
+.btn-ghost{background:#fff;color:var(--text2);border:1.5px solid var(--border)}
+.btn-ghost:hover{background:var(--bg);color:var(--text)}
+.btn-xs{padding:4px 9px;font-size:11px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 
 /* RESULT DISPLAY */
-.result-card{background:rgba(79,195,247,.05);border:1px solid rgba(79,195,247,.25);
-  border-radius:8px;padding:16px;text-align:center;margin-bottom:14px}
-.result-big{font-size:42px;font-weight:700;color:var(--accent);
-  font-variant-numeric:tabular-nums;letter-spacing:-1px;line-height:1.1}
-.result-unit{font-size:12px;color:var(--text2);margin-top:3px}
+.result-card{background:linear-gradient(135deg,rgba(21,101,192,0.06) 0%,rgba(25,118,210,0.03) 100%);
+  border:1.5px solid rgba(21,101,192,0.2);border-radius:10px;padding:18px;text-align:center;margin-bottom:14px}
+.result-big{font-size:46px;font-weight:800;color:var(--accent);
+  font-variant-numeric:tabular-nums;letter-spacing:-1.5px;line-height:1.1}
+.result-unit{font-size:12.5px;color:var(--text2);margin-top:4px;font-weight:500}
 .result-sub{font-size:13px;color:var(--text2);margin-top:6px}
 
 /* EQUATION BOX */
-.eq-box{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;
-  padding:10px 14px;font-family:'Courier New',monospace;font-size:12px;color:var(--accent2);
-  margin-bottom:14px;overflow-x:auto;line-height:1.8;white-space:pre-wrap}
+.eq-box{background:#f8fafc;border:1.5px solid #dce4ee;border-radius:6px;
+  padding:11px 15px;font-family:'Courier New',monospace;font-size:12px;color:#1e3a5f;
+  margin-bottom:14px;overflow-x:auto;line-height:1.9;white-space:pre-wrap}
 
 /* STATUS */
-.status{font-size:11.5px;padding:6px 10px;border-radius:4px;margin-top:8px}
-.status.ok{background:rgba(102,187,106,.12);color:var(--ok)}
-.status.err{background:rgba(239,83,80,.12);color:var(--err)}
-.status.info{background:rgba(79,195,247,.1);color:var(--accent)}
-.status.warn{background:rgba(255,167,38,.1);color:var(--warn)}
+.status{font-size:12px;padding:7px 11px;border-radius:5px;margin-top:8px;font-weight:500}
+.status.ok{background:#e8f5e9;color:var(--ok);border:1px solid #c8e6c9}
+.status.err{background:#ffebee;color:var(--err);border:1px solid #ffcdd2}
+.status.info{background:#e3f2fd;color:var(--accent);border:1px solid #bbdefb}
+.status.warn{background:#fbe9e7;color:var(--warn);border:1px solid #ffccbc}
 .status:empty{display:none}
 
 /* DATA TABLE */
-.dtable{width:100%;border-collapse:collapse;font-size:12px}
-.dtable th{text-align:left;padding:5px 10px;background:rgba(79,195,247,.08);
-  color:var(--accent);font-weight:600;border-bottom:1px solid var(--border)}
-.dtable td{padding:5px 10px;border-bottom:1px solid rgba(255,255,255,.04)}
-.dtable tr:hover td{background:rgba(255,255,255,.03)}
-.ion-k{color:var(--k)}.ion-na{color:var(--na)}.ion-cl{color:var(--cl)}.ion-ca{color:var(--ca)}
+.dtable{width:100%;border-collapse:collapse;font-size:12.5px}
+.dtable th{text-align:left;padding:7px 11px;background:#f0f4f9;
+  color:var(--accent);font-weight:700;border-bottom:2px solid var(--border);font-size:11.5px}
+.dtable td{padding:6px 11px;border-bottom:1px solid #eef1f5;color:var(--text)}
+.dtable tr:hover td{background:#f7f9fc}
+.ion-k{color:var(--k);font-weight:600}
+.ion-na{color:var(--na);font-weight:600}
+.ion-cl{color:var(--cl);font-weight:600}
+.ion-ca{color:var(--ca);font-weight:600}
 
 /* CHART WRAP */
 .chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:8px;
-  padding:12px;margin-bottom:14px}
-.chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.chart-head span{font-size:11.5px;color:var(--text2);font-weight:500}
+  padding:14px;margin-bottom:14px;box-shadow:var(--shadow)}
+.chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.chart-head span{font-size:12px;color:var(--text2);font-weight:600}
 .chart-canvas-wrap{position:relative}
 canvas{width:100%!important}
 
 /* DESCRIPTION */
-details.desc{background:rgba(0,0,0,.2);border-left:3px solid var(--accent);
-  border-radius:0 6px 6px 0;margin-bottom:14px}
-details.desc summary{cursor:pointer;color:var(--accent);font-size:12px;font-weight:600;
-  padding:8px 14px;user-select:none}
-details.desc .desc-body{padding:0 14px 10px;font-size:12px;color:var(--text2);line-height:1.7}
+details.desc{background:#eef4fb;border-left:4px solid var(--accent);
+  border-radius:0 7px 7px 0;margin-bottom:14px}
+details.desc summary{cursor:pointer;color:var(--accent);font-size:12.5px;font-weight:700;
+  padding:9px 15px;user-select:none}
+details.desc .desc-body{padding:0 15px 11px;font-size:12.5px;color:var(--text2);line-height:1.75}
 
 /* SEPARATOR */
 .sep{border:none;border-top:1px solid var(--border);margin:12px 0}
 
 /* SOLVE-FOR ROW */
-.solve-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;
-  background:rgba(79,195,247,.04);border:1px solid var(--border);border-radius:6px;padding:8px 10px}
-.solve-row label{font-size:12px;color:var(--text2);white-space:nowrap}
-.solve-row select{flex:1;background:var(--inp);border:1px solid var(--border);color:var(--text);
-  padding:5px 8px;border-radius:4px;font-size:12.5px;outline:none;font-family:inherit}
-.solve-row select:focus{border-color:var(--accent)}
+.solve-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;
+  background:#eef4fb;border:1.5px solid rgba(21,101,192,0.18);border-radius:7px;padding:9px 12px}
+.solve-row label{font-size:12.5px;color:var(--text2);white-space:nowrap;font-weight:600}
+.solve-row select{flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);
+  padding:6px 9px;border-radius:5px;font-size:13px;outline:none;font-family:inherit;
+  transition:border-color .15s}
+.solve-row select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(21,101,192,0.1)}
 
 /* PLACEHOLDER */
 .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:40vh;gap:12px;opacity:.5}
+  min-height:40vh;gap:12px;opacity:.45}
 .placeholder-icon{font-size:48px}
 .placeholder p{font-size:13px;color:var(--text2)}
 
 /* SECTION DIVIDER */
-.section-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;
-  letter-spacing:.8px;margin-bottom:8px}
+.section-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:9px}
 
 .radio-group{display:flex;gap:14px;flex-wrap:wrap}
-.radio-option{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12.5px}
+.radio-option{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:500}
 .radio-option input{accent-color:var(--accent);cursor:pointer}
 .t3-ca-row.hidden,.t4-cl-row.hidden,.t4-ca-row.hidden{display:none!important}
 #t8ManualBody td input{background:transparent;border:none;color:var(--text);
-  font-size:11.5px;padding:3px 4px;width:68px;outline:none;text-align:center}
-#t8ManualBody td input:focus{background:rgba(79,195,247,.08);border-radius:2px}
-#t8ManualBody td.vm-cell{font-weight:600;text-align:center;font-size:12px}
-.vm-hyper{color:#64b5f6}.vm-depol{color:#ef9a9a}.vm-mid{color:var(--text)}
-.matrix-table{border-collapse:collapse;font-size:11.5px;width:100%}
-.matrix-table th,.matrix-table td{padding:5px 8px;border:1px solid var(--border);text-align:center}
-.matrix-table th{background:rgba(79,195,247,.1);color:var(--accent)}
-.matrix-table td.diag{background:rgba(255,255,255,.04);color:var(--text2);font-style:italic}
+  font-size:12px;padding:3px 4px;width:68px;outline:none;text-align:center}
+#t8ManualBody td input:focus{background:rgba(21,101,192,0.07);border-radius:2px}
+#t8ManualBody td.vm-cell{font-weight:700;text-align:center;font-size:12px}
+.vm-hyper{color:#1565c0}.vm-depol{color:#c62828}.vm-mid{color:var(--text)}
+.matrix-table{border-collapse:collapse;font-size:12px;width:100%}
+.matrix-table th,.matrix-table td{padding:6px 10px;border:1px solid var(--border);text-align:center}
+.matrix-table th{background:#eef4fb;color:var(--accent);font-weight:700}
+.matrix-table td.diag{background:#f7f9fc;color:var(--text2);font-style:italic}
 @media(max-width:900px){
   .layout-2col{grid-template-columns:1fr}
   .grid3{grid-template-columns:1fr 1fr}
 }
 @media(max-width:580px){
   .grid2,.grid3{grid-template-columns:1fr}
-  .result-big{font-size:32px}
+  .result-big{font-size:36px}
 }
 </style>
 </head>
@@ -197,8 +206,6 @@ details.desc .desc-body{padding:0 14px 10px;font-size:12px;color:var(--text2);li
   <button class="tab-btn" data-tab="t2">GHK 3-Ion</button>
   <button class="tab-btn" data-tab="t3">GHK 4-Ion</button>
   <button class="tab-btn" data-tab="t4">P Ratio Solver</button>
-  <button class="tab-btn" data-tab="t5">Nernst</button>
-  <button class="tab-btn" data-tab="t6">GHK Current</button>
   <button class="tab-btn" data-tab="t7">Sweep</button>
   <button class="tab-btn" data-tab="t8">Batch</button>
 </nav>
@@ -719,8 +726,8 @@ Each: Jᵢ = Pᵢ·z²·F²·Vm/RT · (cᵢ − cₒ·exp(−zFVm/RT)) / (1−ex
     </div>
   </div>
 </section>
-<!-- ═══ TAB 5: NERNST COMPANION ═══ -->
-<section id="t5" class="tab-panel">
+<!-- TAB 5 (Nernst) and TAB 6 (GHK Current) removed -->
+<section id="t5" class="tab-panel" style="display:none!important">
   <details class="desc">
     <summary>About: Nernst Companion</summary>
     <div class="desc-body">The Nernst equation gives the equilibrium potential for each ion individually. The GHK voltage is a permeability-weighted average lying between the Nernst potentials. Driving force = Vm − E_ion: positive means ion flows outward, negative means inward.</div>
@@ -778,8 +785,7 @@ Each: Jᵢ = Pᵢ·z²·F²·Vm/RT · (cᵢ − cₒ·exp(−zFVm/RT)) / (1−ex
   </div>
 </section>
 
-<!-- ═══ TAB 6: GHK CURRENT DENSITY ═══ -->
-<section id="t6" class="tab-panel">
+<section id="t6" class="tab-panel" style="display:none!important">
   <details class="desc">
     <summary>About: GHK Current Density</summary>
     <div class="desc-body">GHK current density per ion: J = P·z²·F²·Vm/RT·(cᵢ−cₒ·exp(−zFVm/RT))/(1−exp(−zFVm/RT)). Units depend on P units; using relative permeabilities gives dimensionless relative current. At the reversal potential the total current = 0. The I-V curve shows each ion's current from −100 to +100 mV.</div>
@@ -1163,10 +1169,11 @@ window.GHK = (function(){
 /* ═══════════════════════════════════════
    CHART.JS GLOBAL DEFAULTS (dark theme)
 ═══════════════════════════════════════ */
-Chart.defaults.color='#9090a8';
-Chart.defaults.borderColor='rgba(255,255,255,0.08)';
+Chart.defaults.color='#546e7a';
+Chart.defaults.borderColor='rgba(0,0,0,0.08)';
 Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
 Chart.defaults.font.size=11;
+Chart.defaults.plugins.legend.labels.color='#546e7a';
 
 const chartInstances={};
 
@@ -1185,10 +1192,10 @@ function dlChart(id){
 }
 
 const ION_COLORS={
-  k:'rgba(76,175,80,0.85)',
-  na:'rgba(255,152,0,0.85)',
-  cl:'rgba(171,71,188,0.85)',
-  ca:'rgba(239,83,80,0.85)',
+  k:'rgba(46,125,50,0.85)',
+  na:'rgba(191,54,12,0.85)',
+  cl:'rgba(106,27,154,0.85)',
+  ca:'rgba(183,28,28,0.85)',
 };
 
 /* ═══════════════════════════════════════
@@ -1504,13 +1511,13 @@ document.getElementById('gTemp').addEventListener('input', function(){
         responsive:true,maintainAspectRatio:false,
         plugins:{
           legend:{position:'bottom',labels:{boxWidth:12,padding:12}},
-          title:{display:true,text:'Permeability × Concentration Contributions',color:'#9090a8',font:{size:11}},
+          title:{display:true,text:'Permeability × Concentration Contributions',color:'#546e7a',font:{size:11}},
           tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(4)}`}}
         },
         scales:{
-          x:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#9090a8'}},
-          y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#9090a8'},
-             title:{display:true,text:'P × [ion] (mM)',color:'#9090a8'}}
+          x:{grid:{color:'rgba(0,0,0,0.07)'},ticks:{color:'#546e7a'}},
+          y:{grid:{color:'rgba(0,0,0,0.07)'},ticks:{color:'#546e7a'},
+             title:{display:true,text:'P × [ion] (mM)',color:'#546e7a'}}
         }
       }
     });
@@ -1755,7 +1762,7 @@ document.getElementById('gTemp').addEventListener('input', function(){
       responsive:true, maintainAspectRatio:false,
       plugins:{
         legend:{position:'bottom',labels:{boxWidth:10,padding:8,font:{size:10}}},
-        title:{display:true,text:title,color:'#9090a8',font:{size:10}},
+        title:{display:true,text:title,color:'#546e7a',font:{size:10}},
         tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed.toFixed(3)} (${(ctx.parsed/(numK+numNa+numCl)*100).toFixed(1)}%)`}}
       }
     });
@@ -1971,10 +1978,10 @@ GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
       },
       options:{
         responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},title:{display:true,text:'Ion Currents at Vm (normalised)',color:'#9090a8',font:{size:11}}},
-        scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'}},
-                y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'},
-                   title:{display:true,text:'Relative J',color:'#9090a8'}}}
+        plugins:{legend:{display:false},title:{display:true,text:'Ion Currents at Vm (normalised)',color:'#546e7a',font:{size:11}}},
+        scales:{x:{grid:{color:'rgba(0,0,0,0.07)'},ticks:{color:'#546e7a'}},
+                y:{grid:{color:'rgba(0,0,0,0.07)'},ticks:{color:'#546e7a'},
+                   title:{display:true,text:'Relative J',color:'#546e7a'}}}
       }
     });
 
@@ -2063,7 +2070,7 @@ GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
       const delta=isFinite(r2)?r2-ratio:NaN;
       const pct=isFinite(r2)&&Math.abs(ratio)>1e-12?(delta/ratio*100):NaN;
       const tr=document.createElement('tr');
-      if(dV===0) tr.style.background='rgba(79,195,247,.06)';
+      if(dV===0) tr.style.background='rgba(21,101,192,.08)';
       tr.innerHTML=`<td>${Vm2} mV</td><td>${isFinite(r2)?r2.toFixed(5):'—'}</td>`+
         `<td>${isFinite(delta)?delta.toFixed(5):'—'}</td><td>${isFinite(pct)?pct.toFixed(2)+'%':'—'}</td>`;
       tbody.appendChild(tr);
@@ -2148,15 +2155,15 @@ GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
     getOrCreateChart('t4Chart',{
       type:'line',
       data:{datasets:[{label:'Vm vs P_K/P_Na',data:xs.map((x,i)=>({x,y:ys[i]})),
-        borderColor:'#4fc3f7',borderWidth:1.5,pointRadius:0,tension:0.2}]},
+        borderColor:'#1565c0',borderWidth:1.5,pointRadius:0,tension:0.2}]},
       options:{
         responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false}},
         scales:{
-          x:{type:'logarithmic',title:{display:true,text:'P_K / P_Na (log)',color:'#9090a8'},
-             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}},
-          y:{title:{display:true,text:'Vm (mV)',color:'#9090a8'},
-             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}}
+          x:{type:'logarithmic',title:{display:true,text:'P_K / P_Na (log)',color:'#546e7a'},
+             ticks:{color:'#546e7a'},grid:{color:'rgba(0,0,0,0.07)'}},
+          y:{title:{display:true,text:'Vm (mV)',color:'#546e7a'},
+             ticks:{color:'#546e7a'},grid:{color:'rgba(0,0,0,0.07)'}}
         }
       }
     });
@@ -2238,15 +2245,15 @@ GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
         indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{
           legend:{display:false},
-          title:{display:true,text:'Nernst Potentials (bar) — GHK Vm (line)',color:'#9090a8',font:{size:11}},
+          title:{display:true,text:'Nernst Potentials (bar) — GHK Vm (line)',color:'#546e7a',font:{size:11}},
           annotation:{
-            annotations:isFinite(Vm)?{vmLine:{type:'line',xMin:Vm,xMax:Vm,borderColor:'#4fc3f7',borderWidth:2,label:{content:`Vm=${fmt(Vm,1)}mV`,display:true,color:'#4fc3f7',font:{size:10}}}}:{}
+            annotations:isFinite(Vm)?{vmLine:{type:'line',xMin:Vm,xMax:Vm,borderColor:'#1565c0',borderWidth:2,label:{content:`Vm=${fmt(Vm,1)}mV`,display:true,color:'#1565c0',font:{size:10}}}}:{}
           }
         },
         scales:{
-          x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'},
-             title:{display:true,text:'Potential (mV)',color:'#9090a8'}},
-          y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'}}
+          x:{grid:{color:'rgba(0,0,0,0.07)'},ticks:{color:'#546e7a'},
+             title:{display:true,text:'Potential (mV)',color:'#546e7a'}},
+          y:{grid:{color:'rgba(0,0,0,0.07)'},ticks:{color:'#546e7a'}}
         }
       }
     });
@@ -2305,7 +2312,7 @@ GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
       {label:'Na⁺',borderColor:ION_COLORS.na,data:vmArr.map(vv=>({x:vv,y:GHK.ionCurrent(v.PNa,1,vv,v.Nai,v.Nao)}))},
       {label:'Cl⁻',borderColor:ION_COLORS.cl,data:vmArr.map(vv=>({x:vv,y:GHK.ionCurrent(v.PCl,-1,vv,v.Cli,v.Clo)}))},
       {label:'Ca²⁺',borderColor:ION_COLORS.ca,data:vmArr.map(vv=>({x:vv,y:GHK.ionCurrent(v.PCa,2,vv,v.Cai,v.Cao)}))},
-      {label:'Total',borderColor:'#fff',borderDash:[4,2],data:vmArr.map(vv=>({x:vv,
+      {label:'Total',borderColor:'#37474f',borderDash:[4,2],data:vmArr.map(vv=>({x:vv,
          y:GHK.ionCurrent(v.PK,1,vv,v.Ki,v.Ko)+GHK.ionCurrent(v.PNa,1,vv,v.Nai,v.Nao)
           +GHK.ionCurrent(v.PCl,-1,vv,v.Cli,v.Clo)+GHK.ionCurrent(v.PCa,2,vv,v.Cai,v.Cao)}))},
     ];
@@ -2316,10 +2323,10 @@ GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},
         scales:{
-          x:{type:'linear',title:{display:true,text:'Vm (mV)',color:'#9090a8'},
-             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}},
-          y:{title:{display:true,text:'Current (rel.)',color:'#9090a8'},
-             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}}
+          x:{type:'linear',title:{display:true,text:'Vm (mV)',color:'#546e7a'},
+             ticks:{color:'#546e7a'},grid:{color:'rgba(0,0,0,0.07)'}},
+          y:{title:{display:true,text:'Current (rel.)',color:'#546e7a'},
+             ticks:{color:'#546e7a'},grid:{color:'rgba(0,0,0,0.07)'}}
         }
       }
     });
@@ -2333,8 +2340,8 @@ GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
           backgroundColor:[ION_COLORS.k,ION_COLORS.na,ION_COLORS.cl,ION_COLORS.ca],borderRadius:3}]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false}},
-        scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'}},
-                y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#9090a8'}}}}
+        scales:{x:{grid:{color:'rgba(0,0,0,0.07)'},ticks:{color:'#546e7a'}},
+                y:{grid:{color:'rgba(0,0,0,0.07)'},ticks:{color:'#546e7a'}}}}
     });
 
     showStatus('t6Status',`J_K=${Jk.toExponential(2)}, J_Na=${Jna.toExponential(2)}, J_Cl=${Jcl.toExponential(2)}, J_Ca=${Jca.toExponential(2)}, Total=${Jtot.toExponential(2)}`,'ok');
@@ -2363,7 +2370,7 @@ GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
 ═══════════════════════════════════════════════════════════════ */
 (function(){
   const PHYS={Ko:5,Ki:140,Nao:145,Nai:12,Clo:110,Cli:4,Cao:2,Cai:0.0001,PK:1,PNa:0.04,PCl:0.45,PCa:0.000001};
-  const COLORS=['#4fc3f7','#ff9800','#4caf50','#ab47bc','#ef5350'];
+  const COLORS=['#1565c0','#bf360c','#2e7d32','#6a1b9a','#37474f'];
   let extraCurves=[];
   let lastData=null;
 
@@ -2440,7 +2447,7 @@ GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
       const ys2=computeCurve(f2,varKey,xs);
       datasets.push({
         label:ec.label||`Curve ${idx+2}`,data:xs.map((x,i)=>({x,y:ys2[i]})),
-        borderColor:COLORS[idx+1]||'#fff',borderWidth:1.5,pointRadius:0,tension:0.1,fill:false
+        borderColor:COLORS[idx+1]||'#37474f',borderWidth:1.5,pointRadius:0,tension:0.1,fill:false
       });
     });
 
@@ -2452,10 +2459,10 @@ GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
         plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},
         scales:{
           x:{type:scale==='log'?'logarithmic':'linear',
-             title:{display:true,text:vn,color:'#9090a8'},
-             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}},
-          y:{title:{display:true,text:'Vm (mV)',color:'#9090a8'},
-             ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}}
+             title:{display:true,text:vn,color:'#546e7a'},
+             ticks:{color:'#546e7a'},grid:{color:'rgba(0,0,0,0.07)'}},
+          y:{title:{display:true,text:'Vm (mV)',color:'#546e7a'},
+             ticks:{color:'#546e7a'},grid:{color:'rgba(0,0,0,0.07)'}}
         }
       }
     });
@@ -2674,11 +2681,11 @@ GHK.ghk4Solve = function(Ko,Ki,Nao,Nai,Clo,Cli,Cao,Cai,PK,PNa,PCl,PCa){
     getOrCreateChart('t8Scatter',{
       type:'scatter',
       data:{datasets:[{label:'Vm',data:rows.map(r=>({x:r[xKey],y:r.Vm})).filter(p=>p.x!=null&&p.y!=null),
-        backgroundColor:'rgba(79,195,247,.6)',pointRadius:4}]},
+        backgroundColor:'rgba(21,101,192,.7)',pointRadius:4}]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false}},
-        scales:{x:{title:{display:true,text:xKey,color:'#9090a8'},ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}},
-                y:{title:{display:true,text:'Vm (mV)',color:'#9090a8'},ticks:{color:'#9090a8'},grid:{color:'rgba(255,255,255,.06)'}}}}
+        scales:{x:{title:{display:true,text:xKey,color:'#546e7a'},ticks:{color:'#546e7a'},grid:{color:'rgba(0,0,0,0.07)'}},
+                y:{title:{display:true,text:'Vm (mV)',color:'#546e7a'},ticks:{color:'#546e7a'},grid:{color:'rgba(0,0,0,0.07)'}}}}
     });
 
     // Heatmap
